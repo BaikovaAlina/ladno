@@ -1,0 +1,1551 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f5ed" />
+    <meta
+      name="description"
+      content="Ладно — понятная теория музыки, гитарный гриф и упражнения для начинающих."
+    />
+    <title>Ладно — теория музыки на гитаре</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Библиотеки подключаются до нашего кода. При недоступном CDN есть запасной режим. -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"
+    ></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Навигация по курсу">
+        <a class="brand" href="#notes" aria-label="Ладно — в начало курса">
+          <span class="brand-mark" aria-hidden="true"
+            ><svg viewBox="0 0 32 32">
+              <path
+                d="M16 4C10.2 4 5 7.5 5 13.4 5 20 11.8 26 16 28c4.2-2 11-8 11-14.6C27 7.5 21.8 4 16 4Z"
+              />
+              <path d="M12 15.5h8M12 19h6" /></svg
+          ></span>
+          <span
+            ><strong>ладно<span class="brand-dot">.</span></strong
+            ><small>музыка на гитаре</small></span
+          >
+        </a>
+        <div class="sidebar-label">ТВОЙ УЧЕБНИК <span>01 — 08</span></div>
+        <nav class="navigation" aria-label="Разделы">
+          <a href="#notes" data-nav="notes"
+            ><span class="nav-no">01</span><span>Ноты и октавы</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#intervals" data-nav="intervals"
+            ><span class="nav-no">02</span><span>Интервалы</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#triads" data-nav="triads"
+            ><span class="nav-no">03</span><span>Трезвучия</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#sevenths" data-nav="sevenths"
+            ><span class="nav-no">04</span><span>Септаккорды</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#scales" data-nav="scales"
+            ><span class="nav-no">05</span><span>Гаммы и лады</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#keys" data-nav="keys"
+            ><span class="nav-no">06</span><span>Квинтовый круг</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#harmony" data-nav="harmony"
+            ><span class="nav-no">07</span><span>Гармония</span
+            ><span class="nav-arrow">↗</span></a
+          >
+          <a href="#composition" data-nav="composition"
+            ><span class="nav-no">08</span><span>Композиция</span
+            ><span class="nav-arrow">↗</span></a
+          >
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-tip">
+            <span class="tip-icon">✳</span>
+            <div>
+              <strong>Не спеши.</strong>
+              <p>Пара минут каждый день — уже хорошая практика.</p>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            СДЕЛАНО ДЛЯ ТЕХ,<br />КТО ТОЛЬКО НАЧИНАЕТ <span>♡</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="breadcrumbs">
+            <span>САМОУЧИТЕЛЬ</span><i>/</i
+            ><span id="breadcrumb">Ноты и октавы</span>
+          </div>
+          <div class="topbar-right">
+            <span class="audio-indicator"
+              ><span class="sound-wave" aria-hidden="true">◖))</span>
+              <span id="audio-status">Звук по нажатию</span></span
+            ><span class="top-progress" title="Общая серия правильных ответов"
+              ><span>✦</span> <b id="top-streak">0</b>
+              <span class="progress-word">подряд</span></span
+            >
+          </div>
+        </div>
+        <div class="page">
+          <header class="page-intro">
+            <div class="intro-main">
+              <div class="eyebrow">
+                <span class="eyebrow-dot"></span
+                ><span id="intro-eyebrow">01 / САМОЕ НАЧАЛО</span>
+              </div>
+              <h1 id="intro-title">
+                Музыка начинается<br /><em>с одной ноты.</em>
+              </h1>
+              <p id="intro-text">
+                Разберёмся в нотах, найдём их на грифе и услышим, как они
+                звучат. Всё по порядку, без сложных слов.
+              </p>
+            </div>
+            <div class="intro-stamp" aria-hidden="true">
+              <div class="stamp-top">УЧИСЬ В СВОЁМ ТЕМПЕ <span>↗</span></div>
+              <div class="stamp-art">
+                <span>♫</span>
+                <div><b id="intro-number">01</b><small>/ 08</small></div>
+              </div>
+              <div class="stamp-bottom">ТЕОРИЯ + ПРАКТИКА</div>
+            </div>
+          </header>
+
+          <!-- 01. НОТЫ -->
+          <section class="view" id="view-notes" aria-labelledby="intro-title">
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ИНТЕРАКТИВНЫЙ ГРИФ
+                    <span class="overline-muted">/ СТАНДАРТНЫЙ СТРОЙ</span>
+                  </div>
+                  <h2>Знакомство с грифом</h2>
+                  <p>Нажми на любую ноту, чтобы услышать её.</p>
+                </div>
+                <div class="switch" role="group" aria-label="Отображение нот">
+                  <button
+                    type="button"
+                    class="active"
+                    data-notes-mode="all"
+                    aria-pressed="true"
+                  >
+                    Все ноты</button
+                  ><button
+                    type="button"
+                    data-notes-mode="scale"
+                    aria-pressed="false"
+                  >
+                    Только гамма
+                  </button>
+                </div>
+              </div>
+              <div class="controls notes-controls">
+                <label
+                  >Октава
+                  <select id="notes-octave">
+                    <option value="all">Все октавы</option>
+                    <option value="2">2-я октава</option>
+                    <option value="3" selected>3-я октава</option>
+                    <option value="4">4-я октава</option>
+                    <option value="5">5-я октава</option>
+                  </select></label
+                ><label
+                  >Тоника
+                  <select id="notes-root"></select></label
+                ><label
+                  >Гамма
+                  <select id="notes-scale"></select></label
+                ><span class="control-hint"
+                  >Выбери «Только гамма», чтобы выделить её ноты ↗</span
+                >
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="notes-board"
+                  class="fretboard"
+                  aria-label="Гриф с нотами"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> корень</span
+                  ><span><i class="legend-note"></i> выбранные ноты</span
+                  ><span><i class="legend-muted"></i> остальные</span>
+                </div>
+                <span id="notes-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">СНАЧАЛА РАЗБЕРЁМСЯ</div>
+                <h2>Немного теории <em>без паники.</em></h2>
+              </div>
+              <span class="reading-time">≈ 3 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid three">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Всего 12 звуков</h3>
+                <p>
+                  Основные ноты: <strong>C D E F G A B</strong> — до, ре, ми,
+                  фа, соль, ля, си. Между некоторыми есть диез ♯ или бемоль ♭.
+                  C♯ и D♭ звучат одинаково, но записываются по-разному.
+                </p>
+                <div class="card-example">
+                  C → C♯ → D <span>один лад за шаг</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Тон и полутон</h3>
+                <p>
+                  <strong>Полутон</strong> — расстояние в один лад на одной
+                  струне. <strong>Тон</strong> — два лада. Между E и F, а также
+                  B и C всего полутон: отдельной ноты между ними нет.
+                </p>
+                <div class="card-example">
+                  1 лад = полутон <span>2 лада = тон</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">03 <span>↗</span></span>
+                <h3>Октавы и струны</h3>
+                <p>
+                  Через 12 полутонов имя ноты повторяется, а частота
+                  удваивается: это <strong>октава</strong>. На 12-м ладу звучит
+                  та же нота, что на открытой струне, но на октаву выше.
+                </p>
+                <div class="card-example">
+                  E₂ A₂ D₃ G₃ B₃ E₄ <span>от толстой к тонкой</span>
+                </div>
+              </article>
+            </div>
+            <div class="exercise" id="notes-exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 01
+                  </div>
+                  <h2>Что это за нота?</h2>
+                  <p>
+                    Определи название выделенной точки. Октаву учитывать не
+                    нужно.
+                  </p>
+                </div>
+                <span class="exercise-stats" data-stats="notes"></span>
+              </div>
+              <div class="fret-scroll exercise-board">
+                <div
+                  id="notes-quiz-board"
+                  class="fretboard"
+                  aria-label="Гриф с нотой для задания"
+                ></div>
+              </div>
+              <div
+                class="quiz-status"
+                id="notes-quiz-status"
+                aria-live="polite"
+              >
+                Нажми на ноту ♫
+              </div>
+              <div class="exercise-bottom">
+                <div>
+                  <div class="field-caption">ВЫБЕРИ ОТВЕТ</div>
+                  <div class="answer-row" id="notes-answers"></div>
+                  <p class="feedback" id="notes-feedback" aria-live="polite">
+                    Выбери один из вариантов.
+                  </p>
+                </div>
+                <button
+                  class="button button-ghost"
+                  id="notes-next"
+                  type="button"
+                >
+                  Другая нота <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02. ИНТЕРВАЛЫ -->
+          <section
+            class="view"
+            id="view-intervals"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ПОСМОТРИ И ПОСЛУШАЙ
+                  </div>
+                  <h2>Расстояние между нотами</h2>
+                  <p>
+                    Выбери первую ноту и интервал. Обе ноты отмечены на грифе.
+                  </p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="interval-play"
+                  type="button"
+                >
+                  <span>▶</span> Прослушать
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >От ноты
+                  <select id="interval-root"></select></label
+                ><label
+                  >Интервал
+                  <select id="interval-type"></select></label
+                ><label
+                  >Звучание
+                  <select id="interval-play-mode">
+                    <option value="sequential">По очереди</option>
+                    <option value="together">Одновременно</option>
+                  </select></label
+                >
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="interval-board"
+                  class="fretboard"
+                  aria-label="Интервал на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> первая нота</span
+                  ><span><i class="legend-note"></i> вторая нота</span>
+                </div>
+                <span
+                  id="interval-status"
+                  class="note-status"
+                  aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="score-block">
+                <div>
+                  <div class="overline">НОТНЫЙ СТАН</div>
+                  <strong id="interval-summary"></strong>
+                  <p id="interval-description"></p>
+                </div>
+                <div
+                  id="interval-staff"
+                  class="staff"
+                  aria-label="Интервал на нотном стане"
+                ></div>
+              </div>
+              <p class="notation-note">
+                На стане записана реальная высота звучания; гитарные партии
+                часто пишут октавой выше.
+              </p>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">РАССТОЯНИЕ И ЗВУЧАНИЕ</div>
+                <h2>Две ноты, <em>одна идея.</em></h2>
+              </div>
+              <span class="reading-time">≈ 4 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid two">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Что такое интервал?</h3>
+                <p>
+                  Это расстояние между двумя звуками. Сыграй C на 5-й струне,
+                  3-м ладу, а затем E на той же струне, 7-м ладу: четыре
+                  полутона образуют <strong>большую терцию</strong>. Ноты по
+                  очереди — мелодический интервал; вместе — гармонический.
+                </p>
+                <div class="card-example">
+                  C → E = 4 полутона <span>большая терция</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Устойчивость и напряжение</h3>
+                <p>
+                  <strong>Консонансы</strong> обычно звучат устойчиво: например,
+                  C–G, чистая квинта. <strong>Диссонансы</strong> создают
+                  напряжение: C–D♭, малая секунда. Это не «хорошо» и «плохо» —
+                  музыке нужны оба ощущения.
+                </p>
+                <div class="card-example">
+                  C → G = 7 полутонов <span>чистая квинта</span>
+                </div>
+              </article>
+            </div>
+            <details class="reference">
+              <summary>
+                Таблица интервалов в пределах октавы <span>＋</span>
+              </summary>
+              <p>
+                Название зависит и от количества ступеней, и от числа полутонов.
+                Здесь тритон записываем как увеличенную кварту; уменьшённая
+                квинта звучит так же.
+              </p>
+              <div id="interval-reference" class="reference-grid"></div>
+            </details>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 02
+                  </div>
+                  <h2>Проверим на практике</h2>
+                  <p>Строй интервал на грифе или узнавай его на слух.</p>
+                </div>
+                <span
+                  class="exercise-stats"
+                  id="interval-exercise-stats"
+                ></span>
+              </div>
+              <div
+                class="switch exercise-switch"
+                role="group"
+                aria-label="Режим упражнения"
+              >
+                <button
+                  type="button"
+                  class="active"
+                  data-interval-task="build"
+                  aria-pressed="true"
+                >
+                  Построить</button
+                ><button
+                  type="button"
+                  data-interval-task="ear"
+                  aria-pressed="false"
+                >
+                  На слух
+                </button>
+              </div>
+              <div id="interval-build-area">
+                <p class="task-prompt" id="interval-build-prompt"></p>
+                <p class="task-hint">
+                  Нужна точная высота выше исходной ноты, не только её название.
+                </p>
+                <div class="fret-scroll exercise-board">
+                  <div
+                    id="interval-quiz-board"
+                    class="fretboard"
+                    aria-label="Построение интервала"
+                  ></div>
+                </div>
+                <div
+                  class="quiz-status"
+                  id="interval-quiz-status"
+                  aria-live="polite"
+                >
+                  Нажми на ноту ♫
+                </div>
+                <div class="exercise-bottom">
+                  <p
+                    class="feedback"
+                    id="interval-build-feedback"
+                    aria-live="polite"
+                  >
+                    Нажми на вторую ноту.
+                  </p>
+                  <button
+                    class="button button-ghost"
+                    id="interval-build-next"
+                    type="button"
+                  >
+                    Другое задание <span>↗</span>
+                  </button>
+                </div>
+              </div>
+              <div id="interval-ear-area" hidden>
+                <p class="task-prompt">Какой интервал звучит?</p>
+                <p class="task-hint">
+                  Ноты идут снизу вверх. Можно слушать сколько угодно раз.
+                </p>
+                <div class="ear-controls">
+                  <button
+                    class="button button-dark"
+                    id="ear-play"
+                    type="button"
+                  >
+                    <span>▶</span> Слушать</button
+                  ><label
+                    >Звучание
+                    <select id="ear-play-mode">
+                      <option value="sequential">По очереди</option>
+                      <option value="together">Одновременно</option>
+                    </select></label
+                  >
+                </div>
+                <div class="exercise-bottom">
+                  <div>
+                    <div class="answer-row" id="ear-answers"></div>
+                    <p class="feedback" id="ear-feedback" aria-live="polite">
+                      Сначала послушай, затем выбери ответ.
+                    </p>
+                  </div>
+                  <button
+                    class="button button-ghost"
+                    id="ear-next"
+                    type="button"
+                  >
+                    Другой интервал <span>↗</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 03. ТРЕЗВУЧИЯ -->
+          <section
+            class="view"
+            id="view-triads"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТРИ ЗВУКА ВМЕСТЕ
+                  </div>
+                  <h2>Конструктор трезвучий</h2>
+                  <p>Меняй вид, обращение и расположение нот на грифе.</p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="triad-play"
+                  type="button"
+                >
+                  <span>▶</span> Слушать аккорд
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >От ноты
+                  <select id="triad-root"></select></label
+                ><label
+                  >Трезвучие
+                  <select id="triad-type"></select></label
+                ><label
+                  >Обращение
+                  <select id="triad-inversion">
+                    <option value="0">Основной вид</option>
+                    <option value="1">Первое обращение</option>
+                    <option value="2">Второе обращение</option>
+                  </select></label
+                ><label
+                  >Аппликатура
+                  <select id="triad-shape"></select
+                ></label>
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="triad-board"
+                  class="fretboard"
+                  aria-label="Трезвучие на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> корень аккорда</span
+                  ><span><i class="legend-note"></i> остальные звуки</span>
+                </div>
+                <span id="triad-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="score-block">
+                <div>
+                  <div class="overline">СОСТАВ И НОТАЦИЯ</div>
+                  <strong id="triad-summary"></strong>
+                  <p id="triad-description"></p>
+                  <p id="triad-position" class="position-text"></p>
+                </div>
+                <div
+                  id="triad-staff"
+                  class="staff"
+                  aria-label="Трезвучие на нотном стане"
+                ></div>
+              </div>
+              <p class="notation-note">
+                На стане записана реальная высота звучания; гитарные партии
+                часто пишут октавой выше.
+              </p>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">ИЗ ИНТЕРВАЛОВ В АККОРДЫ</div>
+                <h2>Три ноты — <em>четыре характера.</em></h2>
+              </div>
+              <span class="reading-time">≈ 4 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid two">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Собираем по терциям</h3>
+                <p>
+                  Трезвучие — три разных звука, которые можно расположить по
+                  терциям. У C-мажора это C–E–G: C на 5-й струне, 3-м ладу; E на
+                  4-й, 2-м; G — открытая 3-я струна.
+                </p>
+                <div class="mini-list">
+                  <span><b>Мажор</b> 4 + 3 полутона</span
+                  ><span><b>Минор</b> 3 + 4</span
+                  ><span><b>Уменьшённое</b> 3 + 3</span
+                  ><span><b>Увеличенное</b> 4 + 4</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Переставляем звуки</h3>
+                <p>
+                  Корень — нота, от которой построен аккорд. Если в басу корень,
+                  это <strong>основной вид</strong>. Если нижней стала терция —
+                  первое обращение; квинта — второе. Состав не меняется.
+                </p>
+                <div class="card-example">
+                  C–E–G → E–G–C → G–C–E <span>один аккорд, разный бас</span>
+                </div>
+              </article>
+            </div>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 03
+                  </div>
+                  <h2>Собери аккорд</h2>
+                  <p id="triad-quiz-prompt"></p>
+                </div>
+                <span class="exercise-stats" data-stats="triad"></span>
+              </div>
+              <p class="task-hint">
+                Выбери ровно три точки: по одной на каждый звук, в любом
+                регистре. В настоящих аппликатурах звуки могут удваиваться.
+              </p>
+              <div class="fret-scroll exercise-board">
+                <div
+                  id="triad-quiz-board"
+                  class="fretboard"
+                  aria-label="Собрать трезвучие"
+                ></div>
+              </div>
+              <div
+                class="quiz-status"
+                id="triad-quiz-status"
+                aria-live="polite"
+              >
+                Нажми на ноту ♫
+              </div>
+              <div class="selected-line">
+                Выбрано: <strong id="triad-picked">пока ничего</strong>
+              </div>
+              <div class="exercise-bottom">
+                <div>
+                  <button
+                    class="button button-dark"
+                    id="triad-check"
+                    type="button"
+                  >
+                    Проверить <span>↗</span>
+                  </button>
+                  <p class="feedback" id="triad-feedback" aria-live="polite">
+                    Нажимай на ноты, чтобы выбрать или отменить их.
+                  </p>
+                </div>
+                <button
+                  class="button button-ghost"
+                  id="triad-next"
+                  type="button"
+                >
+                  Другой аккорд <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 04. СЕПТАККОРДЫ -->
+          <section
+            class="view"
+            id="view-sevenths"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ДОБАВИМ ЕЩЁ ОДИН ЗВУК
+                  </div>
+                  <h2>Конструктор септаккордов</h2>
+                  <p>Четыре звука, одна новая краска. Послушай разницу.</p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="seventh-play"
+                  type="button"
+                >
+                  <span>▶</span> Слушать аккорд
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >От ноты
+                  <select id="seventh-root"></select></label
+                ><label
+                  >Тип септаккорда
+                  <select id="seventh-type"></select></label
+                ><label
+                  >Аппликатура
+                  <select id="seventh-shape"></select
+                ></label>
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="seventh-board"
+                  class="fretboard"
+                  aria-label="Септаккорд на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> корень</span
+                  ><span><i class="legend-note"></i> остальные звуки</span>
+                </div>
+                <span id="seventh-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="score-block">
+                <div>
+                  <div class="overline">СОСТАВ И НОТАЦИЯ</div>
+                  <strong id="seventh-summary"></strong>
+                  <p id="seventh-description"></p>
+                  <p id="seventh-position" class="position-text"></p>
+                </div>
+                <div
+                  id="seventh-staff"
+                  class="staff"
+                  aria-label="Септаккорд на нотном стане"
+                ></div>
+              </div>
+              <p class="notation-note">
+                На стане записана реальная высота звучания; гитарные партии
+                часто пишут октавой выше.
+              </p>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">ЧЕТЫРЕ НОТЫ, БОЛЬШЕ ЦВЕТА</div>
+                <h2>Ещё одна терция <em>сверху.</em></h2>
+              </div>
+              <span class="reading-time">≈ 4 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid two">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Откуда берётся септима?</h3>
+                <p>
+                  К трезвучию добавляем ещё одну терцию. Крайние звуки образуют
+                  <strong>септиму</strong>: большую (11 полутонов), малую (10)
+                  или уменьшённую (9). Вид трезвучия тоже важен для названия
+                  аккорда.
+                </p>
+                <div class="card-example">
+                  Cmaj7: C–E–G–B <span>мажор + большая септима</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Доминанта просится домой</h3>
+                <p>
+                  G7 — мажорное трезвучие с малой септимой: G–B–D–F. Попробуй
+                  D-струну, 5-й лад; G-струну, 4-й; B-струну, 3-й; тонкую E,
+                  1-й. G7 создаёт напряжение, которое часто разрешается в C.
+                </p>
+                <div class="card-example">
+                  G7 → C <span>напряжение → покой</span>
+                </div>
+              </article>
+            </div>
+            <details class="reference">
+              <summary>
+                Чем отличаются виды септаккордов? <span>＋</span>
+              </summary>
+              <div class="reference-copy">
+                <p>
+                  <b>Большой мажорный maj7:</b> мажорное трезвучие + большая
+                  септима. <b>Малый минорный m7:</b> минорное + малая септима.
+                  <b>Доминантовый 7:</b> мажорное + малая септима; в мажоре он
+                  строится на V ступени.
+                </p>
+                <p>
+                  <b>Уменьшённый °7:</b> уменьшённое трезвучие + уменьшённая
+                  септима. Например, C–E♭–G♭–B♭♭: B♭♭ звучит как A, но так
+                  записана именно септима.
+                  <b>Полууменьшённый m7♭5:</b> уменьшённое трезвучие + малая
+                  септима. Есть и большой минорный m(maj7).
+                </p>
+              </div>
+            </details>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 04
+                  </div>
+                  <h2>Узнай септаккорд</h2>
+                  <p id="seventh-quiz-prompt"></p>
+                </div>
+                <span class="exercise-stats" data-stats="seventh"></span>
+              </div>
+              <p class="task-hint">
+                Изучи отмеченные ноты, нажми на них по одной или послушай аккорд
+                целиком.
+              </p>
+              <div class="fret-scroll exercise-board">
+                <div
+                  id="seventh-quiz-board"
+                  class="fretboard"
+                  aria-label="Септаккорд для определения"
+                ></div>
+              </div>
+              <div class="ear-controls">
+                <button
+                  class="button button-dark"
+                  id="seventh-quiz-play"
+                  type="button"
+                >
+                  <span>▶</span> Слушать аккорд</button
+                ><span
+                  class="note-status"
+                  id="seventh-quiz-status"
+                  aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="exercise-bottom">
+                <div>
+                  <div class="answer-row" id="seventh-answers"></div>
+                  <p class="feedback" id="seventh-feedback" aria-live="polite">
+                    Выбери тип аккорда.
+                  </p>
+                </div>
+                <button
+                  class="button button-ghost"
+                  id="seventh-next"
+                  type="button"
+                >
+                  Другой аккорд <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 05. ГАММЫ -->
+          <section
+            class="view"
+            id="view-scales"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ВСЯ КАРТА ПЕРЕД ТОБОЙ
+                  </div>
+                  <h2>Гамма на грифе</h2>
+                  <p>Корень выделен тёмным. Кликни на любую позицию.</p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="scale-play"
+                  type="button"
+                >
+                  <span>▶</span> Слушать гамму
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >Тоника
+                  <select id="scale-root"></select></label
+                ><label
+                  >Гамма или лад
+                  <select id="scale-type"></select
+                ></label>
+                <div class="switch" role="group" aria-label="Вид грифа">
+                  <button
+                    type="button"
+                    class="active"
+                    data-scale-mode="scale"
+                    aria-pressed="true"
+                  >
+                    Только гамма</button
+                  ><button
+                    type="button"
+                    data-scale-mode="all"
+                    aria-pressed="false"
+                  >
+                    Все ноты
+                  </button>
+                </div>
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="scale-board"
+                  class="fretboard"
+                  aria-label="Ноты выбранной гаммы на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> тоника</span
+                  ><span><i class="legend-note"></i> ноты гаммы</span>
+                </div>
+                <span id="scale-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="scale-info">
+                <div>
+                  <div class="overline">ФОРМУЛА ШАГОВ</div>
+                  <strong id="scale-formula"></strong>
+                  <p>Т = 2 лада · П = 1 лад · 1½Т = 3 лада</p>
+                </div>
+                <div>
+                  <div class="overline">НА ПАЛЬЦАХ</div>
+                  <strong id="scale-name"></strong>
+                  <p id="scale-description"></p>
+                </div>
+              </div>
+              <div class="score-block">
+                <div>
+                  <div class="overline">НОТЫ ГАММЫ</div>
+                  <strong id="scale-summary"></strong>
+                  <p>Восходящее движение, с повтором тоники.</p>
+                </div>
+                <div
+                  id="scale-staff"
+                  class="staff"
+                  aria-label="Гамма на нотном стане"
+                ></div>
+              </div>
+              <p class="notation-note">
+                На стане записана реальная высота звучания; гитарные партии
+                часто пишут октавой выше.
+              </p>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">ПАЛИТРА ДЛЯ МЕЛОДИЙ</div>
+                <h2>Не заучивай. <em>Слушай.</em></h2>
+              </div>
+              <span class="reading-time">≈ 6 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid two">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Гамма и тоника</h3>
+                <p>
+                  Гамма — ноты в порядке высоты; её опорная нота называется
+                  <strong>тоникой</strong>. C-мажор — C D E F G A B C. На 5-й
+                  струне начни с C на 3-м ладу и поднимайся по формуле.
+                </p>
+                <div class="card-example">
+                  C D E F G A B C <span>семь ступеней</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Пять звуков — уже музыка</h3>
+                <p>
+                  Пентатоника состоит из пяти разных нот. A-минорная: A C D E G.
+                  Например, на 3-й струне открой G и сравни с A на 2-м ладу. Оба
+                  звука входят в эту пентатонику.
+                </p>
+                <div class="card-example">
+                  A C D E G <span>минорная пентатоника</span>
+                </div>
+              </article>
+            </div>
+            <details class="reference">
+              <summary>
+                Все гаммы и лады: формулы и объяснения <span>＋</span>
+              </summary>
+              <p>
+                Каждая формула идёт от тоники до её повтора на октаву выше.
+                Мажор называют ионийским ладом, натуральный минор — эолийским.
+              </p>
+              <div id="scale-reference" class="scale-reference"></div>
+            </details>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 05
+                  </div>
+                  <h2>Найди ноты гаммы</h2>
+                  <p id="scale-quiz-prompt"></p>
+                </div>
+                <span class="exercise-stats" data-stats="scale"></span>
+              </div>
+              <p class="task-hint">
+                Выбери каждый звук по одному разу в любом месте грифа, без
+                лишних. Повторный клик отменяет выбор.
+              </p>
+              <div class="fret-scroll exercise-board">
+                <div
+                  id="scale-quiz-board"
+                  class="fretboard"
+                  aria-label="Найти ноты гаммы"
+                ></div>
+              </div>
+              <div
+                class="quiz-status"
+                id="scale-quiz-status"
+                aria-live="polite"
+              >
+                Нажми на ноту ♫
+              </div>
+              <div class="selected-line">
+                Выбрано: <strong id="scale-picked">пока ничего</strong>
+              </div>
+              <div class="exercise-bottom">
+                <div>
+                  <button
+                    class="button button-dark"
+                    id="scale-check"
+                    type="button"
+                  >
+                    Проверить <span>↗</span>
+                  </button>
+                  <p class="feedback" id="scale-feedback" aria-live="polite">
+                    Выбирай ноты на грифе.
+                  </p>
+                </div>
+                <div class="button-row">
+                  <button
+                    class="button button-ghost"
+                    id="scale-reset"
+                    type="button"
+                  >
+                    Заново</button
+                  ><button
+                    class="button button-ghost"
+                    id="scale-random"
+                    type="button"
+                  >
+                    Случайная гамма <span>↗</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 06. КВИНТОВЫЙ КРУГ -->
+          <section
+            class="view"
+            id="view-keys"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> НАЙДИ СВОЮ ТОНАЛЬНОСТЬ
+                  </div>
+                  <h2>Квинтовый круг</h2>
+                  <p>
+                    Выбери мажор или параллельный минор, затем нажми на
+                    тональность на круге.
+                  </p>
+                </div>
+                <span class="small-chip">12 ЗВУЧАНИЙ · 15 ЗАПИСЕЙ</span>
+              </div>
+              <div class="key-toolbar">
+                <span>ПОКАЗАТЬ НА КРУГЕ</span>
+                <div class="switch" role="group" aria-label="Лад тональности">
+                  <button
+                    type="button"
+                    class="active"
+                    data-key-mode="major"
+                    aria-pressed="true"
+                  >
+                    Мажор</button
+                  ><button
+                    type="button"
+                    data-key-mode="minor"
+                    aria-pressed="false"
+                  >
+                    Параллельный минор
+                  </button>
+                </div>
+              </div>
+              <div class="circle-layout">
+                <div
+                  id="key-circle"
+                  class="key-circle"
+                  aria-label="Интерактивный квинтовый круг"
+                ></div>
+                <div class="key-detail">
+                  <div class="overline">ВЫБРАННАЯ ТОНАЛЬНОСТЬ</div>
+                  <h3 id="key-title"></h3>
+                  <p id="key-relative"></p>
+                  <div
+                    id="key-enharmonic"
+                    class="enharmonic-options"
+                    role="group"
+                    aria-label="Энгармоническая запись тональности"
+                  ></div>
+                  <div class="key-detail-line">
+                    <span>КЛЮЧЕВЫЕ ЗНАКИ</span
+                    ><strong id="key-sign-count"></strong>
+                  </div>
+                  <div class="key-detail-line">
+                    <span>КАКИЕ ЗНАКИ</span><strong id="key-signs"></strong>
+                  </div>
+                  <div class="key-detail-line">
+                    <span id="key-notes-label">НОТЫ МАЖОРА</span
+                    ><strong id="key-notes"></strong>
+                  </div>
+                  <p class="key-note">
+                    Ноты грифа подписаны в соответствии с выбранной
+                    тональностью.
+                  </p>
+                </div>
+              </div>
+              <div class="fret-scroll">
+                <div
+                  id="key-board"
+                  class="fretboard"
+                  aria-label="Ноты выбранной тональности на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> тоника</span
+                  ><span><i class="legend-note"></i> ноты тональности</span>
+                </div>
+                <span id="key-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">МУЗЫКАЛЬНАЯ КАРТА</div>
+                <h2>Круг, который <em>помогает.</em></h2>
+              </div>
+              <span class="reading-time">≈ 4 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid two">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Что такое тональность?</h3>
+                <p>
+                  Это система звуков с ощущением опоры на тонику и определённым
+                  ладом. C-мажор опирается на C, использует белые клавиши и не
+                  имеет ключевых знаков; на грифе C есть на 5-й струне, 3-м
+                  ладу.
+                </p>
+                <div class="card-example">
+                  C мажор / A минор <span>общие ноты, разная опора</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Двигаемся по квинтам</h3>
+                <p>
+                  По часовой стрелке тоника поднимается на чистую квинту: C → G
+                  → D. Соседи обычно отличаются одним ключевым знаком, поэтому
+                  удобны для модуляции. При транспонировании сохрани интервалы и
+                  перенеси всю последовательность к новой тонике.
+                </p>
+                <div class="card-example">C → G <span>появляется F♯</span></div>
+              </article>
+            </div>
+            <p class="fine-print">
+              На круге показаны 12 звучаний и 15 записей мажора. В узлах B/C♭,
+              F♯/G♭ и D♭/C♯ можно выбрать энгармоническую запись: звучание
+              одинаковое, а ключевые знаки различаются. На стыке F♯ и D♭ квинта
+              вверх записана как C♯ = D♭.
+            </p>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 06
+                  </div>
+                  <h2>Ориентируемся в круге</h2>
+                  <p>Попрактикуй ключевые знаки и движение к доминанте.</p>
+                </div>
+                <span class="exercise-stats" id="key-exercise-stats"></span>
+              </div>
+              <div
+                class="switch exercise-switch"
+                role="group"
+                aria-label="Режим задания"
+              >
+                <button
+                  class="active"
+                  type="button"
+                  data-key-task="signs"
+                  aria-pressed="true"
+                >
+                  Ключевые знаки</button
+                ><button
+                  type="button"
+                  data-key-task="modulation"
+                  aria-pressed="false"
+                >
+                  Модуляция
+                </button>
+              </div>
+              <p class="task-prompt" id="key-quiz-prompt"></p>
+              <div class="exercise-bottom">
+                <div>
+                  <div class="answer-row" id="key-answers"></div>
+                  <p class="feedback" id="key-feedback" aria-live="polite">
+                    Выбери ответ.
+                  </p>
+                </div>
+                <button class="button button-ghost" id="key-next" type="button">
+                  Другая задача <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 07. ГАРМОНИЯ -->
+          <section
+            class="view"
+            id="view-harmony"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> АККОРДЫ В ДВИЖЕНИИ
+                  </div>
+                  <h2>Послушай прогрессию</h2>
+                  <p>
+                    Выбери тональность и последовательность. Нажми на аккорд,
+                    чтобы увидеть его на грифе.
+                  </p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="harmony-play"
+                  type="button"
+                >
+                  <span>▶</span> Слушать всё
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >Мажорная тоника
+                  <select id="harmony-root"></select></label
+                ><label
+                  >Прогрессия
+                  <select id="harmony-progression"></select
+                ></label>
+              </div>
+              <div class="chord-row" id="harmony-chords"></div>
+              <div class="fret-scroll">
+                <div
+                  id="harmony-board"
+                  class="fretboard"
+                  aria-label="Аккорд из прогрессии на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> корень аккорда</span
+                  ><span><i class="legend-note"></i> звуки аккорда</span>
+                </div>
+                <span id="harmony-status" class="note-status" aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+              <div class="under-board" id="harmony-detail"></div>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">КАК ДВИЖЕТСЯ МУЗЫКА</div>
+                <h2>У каждого аккорда <em>своя роль.</em></h2>
+              </div>
+              <span class="reading-time">≈ 5 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid three">
+              <article class="lesson-card">
+                <span class="card-no">T <span>↗</span></span>
+                <h3>Тоника — дом</h3>
+                <p>
+                  Тоническая функция даёт опору и завершение. В C-мажоре это C:
+                  на грифе возьми C на 5-й струне, 3-м ладу. Аккорды Am и Em
+                  могут выступать заменами.
+                </p>
+                <div class="card-example">I · C <span>устойчивость</span></div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">S <span>↗</span></span>
+                <h3>Субдоминанта — путь</h3>
+                <p>
+                  Субдоминанта уводит от опоры. В C-мажоре основная S — F, а Dm
+                  может заменить её. Сравни ноты C и F: F находится на 4-й
+                  струне, 3-м ладу.
+                </p>
+                <div class="card-example">IV · F <span>движение</span></div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">D <span>↗</span></span>
+                <h3>Доминанта — ожидание</h3>
+                <p>
+                  Доминанта создаёт тягу вернуться к тонике. В C-мажоре это G
+                  или G7: G на 6-й струне, 3-м ладу. После G сыграй C и послушай
+                  разрешение.
+                </p>
+                <div class="card-example">
+                  V · G → I · C <span>напряжение → покой</span>
+                </div>
+              </article>
+            </div>
+            <details class="reference">
+              <summary>
+                Прогрессии, импровизация и модуляция <span>＋</span>
+              </summary>
+              <div class="reference-copy">
+                <p>
+                  Прогрессия — последовательность аккордов. I–IV–V–I в C-мажоре
+                  даёт C–F–G–C. Римские цифры обозначают ступени: прописные
+                  обычно мажорные, строчные — минорные; ° — уменьшённое
+                  трезвучие.
+                </p>
+                <p>
+                  Для первой импровизации включи C–F–G–C и пробуй ноты
+                  C-мажорной пентатоники C D E G A. В сильную долю ищи ноту
+                  текущего аккорда, между ними — соседние звуки гаммы; делай
+                  паузы. Модуляция — переход к новой тонике, а не просто смена
+                  аккорда: например, G может стать новым устойчивым центром
+                  после C.
+                </p>
+              </div>
+            </details>
+            <div class="exercise">
+              <div class="exercise-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 07
+                  </div>
+                  <h2>Собери прогрессию</h2>
+                  <p id="harmony-quiz-prompt"></p>
+                </div>
+                <span class="exercise-stats" data-stats="harmony"></span>
+              </div>
+              <p class="task-hint">
+                Подбери аккорд для каждой функции. Замены тоже подходят: в этом
+                учебном примере iii и vi относятся к T, ii — к S, vii° — к D.
+              </p>
+              <div class="function-slots" id="harmony-slots"></div>
+              <div class="exercise-bottom">
+                <div>
+                  <button
+                    class="button button-dark"
+                    id="harmony-check"
+                    type="button"
+                  >
+                    Проверить <span>↗</span>
+                  </button>
+                  <p class="feedback" id="harmony-feedback" aria-live="polite">
+                    Выбери аккорд в каждом поле.
+                  </p>
+                </div>
+                <button
+                  class="button button-ghost"
+                  id="harmony-reset"
+                  type="button"
+                >
+                  Заново <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 08. КОМПОЗИЦИЯ -->
+          <section
+            class="view"
+            id="view-composition"
+            aria-labelledby="intro-title"
+            hidden
+          >
+            <div class="panel board-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">
+                    <span class="tiny-dot"></span> МАЛЕНЬКАЯ МУЗЫКАЛЬНАЯ
+                    ЛАБОРАТОРИЯ
+                  </div>
+                  <h2>Твой первый набросок</h2>
+                  <p>
+                    Выбери гармонию и гамму: мы соберём короткий мотив на четыре
+                    такта.
+                  </p>
+                </div>
+                <button
+                  class="button button-dark"
+                  id="composition-play"
+                  type="button"
+                >
+                  <span>▶</span> Играть вместе
+                </button>
+              </div>
+              <div class="controls">
+                <label
+                  >Тоника
+                  <select id="composition-root"></select></label
+                ><label
+                  >Прогрессия
+                  <select id="composition-progression"></select></label
+                ><label
+                  >Гамма мелодии
+                  <select id="composition-scale"></select
+                ></label>
+              </div>
+              <div class="composition-head">
+                <div>
+                  <div class="overline">МОТИВ · 4 ТАКТА · 4/4</div>
+                  <p id="composition-hint"></p>
+                </div>
+                <button
+                  class="button button-ghost"
+                  id="composition-regenerate"
+                  type="button"
+                >
+                  Новый мотив <span>↻</span>
+                </button>
+              </div>
+              <div
+                class="motif-row"
+                id="composition-motif"
+                aria-label="Ноты созданного мотива"
+              ></div>
+              <div class="fret-scroll">
+                <div
+                  id="composition-board"
+                  class="fretboard"
+                  aria-label="Гамма мелодии на грифе"
+                ></div>
+              </div>
+              <div class="board-footer">
+                <div class="legend">
+                  <span><i class="legend-root"></i> тоника</span
+                  ><span><i class="legend-note"></i> гамма мелодии</span>
+                </div>
+                <span
+                  id="composition-status"
+                  class="note-status"
+                  aria-live="polite"
+                  >Нажми на ноту ♫</span
+                >
+              </div>
+            </div>
+            <div class="section-title">
+              <div>
+                <div class="overline">ТВОЯ МУЗЫКА НАЧИНАЕТСЯ ЗДЕСЬ</div>
+                <h2>Из идеи — <em>в маленькую пьесу.</em></h2>
+              </div>
+              <span class="reading-time">≈ 3 МИН ЧТЕНИЯ</span>
+            </div>
+            <div class="theory-grid three">
+              <article class="lesson-card">
+                <span class="card-no">01 <span>↗</span></span>
+                <h3>Найди опору</h3>
+                <p>
+                  Возьми простую прогрессию C–F–G–C. На сильной первой доле
+                  попробуй звук текущего аккорда: C над C, F над F, G над G. Все
+                  три легко найти на грифе.
+                </p>
+                <div class="card-example">
+                  C → F → G → C <span>четыре такта</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">02 <span>↗</span></span>
+                <h3>Повтори и измени</h3>
+                <p>
+                  Мотив — короткая узнаваемая музыкальная мысль. Сыграй C–D–E на
+                  5-й струне, лады 3–5–7; повтори и измени последнюю ноту.
+                  Оставляй место для пауз.
+                </p>
+                <div class="card-example">
+                  C D E · C D G <span>повтор + изменение</span>
+                </div>
+              </article>
+              <article class="lesson-card">
+                <span class="card-no">03 <span>↗</span></span>
+                <h3>Доверься уху</h3>
+                <p>
+                  Совмещай мотив с аккордами и прислушивайся к напряжению.
+                  Сильные доли часто опираются на звуки аккорда, но это не
+                  запрет на другие ноты. Меняй ритм и закончи на тонике.
+                </p>
+                <div class="card-example">
+                  слушай · меняй · повторяй <span>это уже композиция</span>
+                </div>
+              </article>
+            </div>
+            <div class="closing-card">
+              <span class="closing-symbol">✳</span>
+              <div>
+                <h2>Маленькие шаги <em>звучат лучше тишины.</em></h2>
+                <p>Вернись к любой теме, нажми на ноту и попробуй ещё раз.</p>
+              </div>
+              <a class="button button-light" href="#notes"
+                >К началу курса <span>↗</span></a
+              >
+            </div>
+          </section>
+          <footer class="footer">
+            <div>
+              <b>ладно<span>.</span></b> <span>МУЗЫКА ПОНЯТНЫМ ЯЗЫКОМ</span>
+            </div>
+            <div id="storage-status">Прогресс хранится в этом браузере</div>
+            <button id="reset-progress" type="button">Сбросить прогресс</button>
+          </footer>
+        </div>
+      </main>
+    </div>
+    <noscript
+      ><div class="noscript">
+        Для интерактивного грифа и упражнений включи JavaScript в браузере.
+      </div></noscript
+    >
+  </body>
+</html>
