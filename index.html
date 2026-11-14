@@ -19,7 +19,7 @@
       defer
       src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"
     ></script>
-    <script defer src="app.js"></script>
+    <script type="module" src="./app.js"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -37,7 +37,7 @@
             ><small>музыка на гитаре</small></span
           >
         </a>
-        <div class="sidebar-label">ТВОЙ УЧЕБНИК <span>01 — 08</span></div>
+        <div class="sidebar-label">ТВОЙ УЧЕБНИК <span>01 — 14</span></div>
         <nav class="navigation" aria-label="Разделы">
           <a href="#notes" data-nav="notes"
             ><span class="nav-no">01</span><span>Ноты и октавы</span
@@ -71,7 +71,32 @@
             ><span class="nav-no">08</span><span>Композиция</span
             ><span class="nav-arrow">↗</span></a
           >
+          <a href="#pentatonic" data-nav="pentatonic"
+            ><span class="nav-no">09</span><span>Пентатоника</span
+            ><span class="nav-arrow">↗</span></a
+          ><a href="#blues" data-nav="blues"
+            ><span class="nav-no">10</span><span>Блюзовые гаммы</span
+            ><span class="nav-arrow">↗</span></a
+          ><a href="#ear-intervals" data-nav="ear-intervals"
+            ><span class="nav-no">11</span><span>Тренировщик слуха</span
+            ><span class="nav-arrow">↗</span></a
+          ><a href="#ear-chords" data-nav="ear-chords"
+            ><span class="nav-no">12</span><span>Аккорды на слух</span
+            ><span class="nav-arrow">↗</span></a
+          ><a href="#rhythm" data-nav="rhythm"
+            ><span class="nav-no">13</span><span>Ритм и грув</span
+            ><span class="nav-arrow">↗</span></a
+          ><a href="#sight-reading" data-nav="sight-reading"
+            ><span class="nav-no">14</span><span>Чтение с листа</span
+            ><span class="nav-arrow">↗</span></a
+          >
         </nav>
+        <div class="course-progress">
+          <strong>Твой путь</strong><span id="course-progress-label"></span>
+          <div class="progress-track">
+            <div id="course-progress-fill"></div>
+          </div>
+        </div>
         <div class="sidebar-bottom">
           <div class="sidebar-tip">
             <span class="tip-icon">✳</span>
@@ -90,9 +115,15 @@
         <div class="topbar">
           <div class="breadcrumbs">
             <span>САМОУЧИТЕЛЬ</span><i>/</i
+            ><span id="breadcrumb-no">ГЛАВА 01</span><i>/</i
             ><span id="breadcrumb">Ноты и октавы</span>
           </div>
           <div class="topbar-right">
+            <button id="theme-toggle" class="button button-ghost">
+              ☾ Тёмная</button
+            ><button id="share-global" class="button button-ghost">
+              Поделиться результатом
+            </button>
             <span class="audio-indicator"
               ><span class="sound-wave" aria-hidden="true">◖))</span>
               <span id="audio-status">Звук по нажатию</span></span
@@ -121,7 +152,7 @@
               <div class="stamp-top">УЧИСЬ В СВОЁМ ТЕМПЕ <span>↗</span></div>
               <div class="stamp-art">
                 <span>♫</span>
-                <div><b id="intro-number">01</b><small>/ 08</small></div>
+                <div><b id="intro-number">01</b><small>/ 14</small></div>
               </div>
               <div class="stamp-bottom">ТЕОРИЯ + ПРАКТИКА</div>
             </div>
@@ -293,6 +324,43 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <button
+                type="button"
+                class="button button-ghost"
+                id="interval-random-play"
+              >
+                ♫ Случайная нота
+              </button>
+              <p id="interval-inversion-box"></p>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p id="interval-fingers-tip"></p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p id="interval-mistake-tip"></p>
+                </article>
+              </div>
+              <h3>Как звучат интервалы и их обращения</h3>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Интервал</th>
+                      <th>Полутоны</th>
+                      <th>Характер</th>
+                      <th>Звучание</th>
+                      <th>Обращение</th>
+                    </tr>
+                  </thead>
+                  <tbody id="interval-reference-body"></tbody>
+                </table>
+              </div>
+              <h3>Составные интервалы</h3>
+              <div id="compound-interval-grid" class="lesson-grid"></div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -409,7 +477,7 @@
               </p>
               <div id="interval-reference" class="reference-grid"></div>
             </details>
-            <div class="exercise">
+            <div class="exercise" id="intervals-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -525,6 +593,32 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <label
+                >Басовая струна<select id="triad-string-set">
+                  <option value="all">Все струны</option>
+                  <option value="4">4-я струна</option>
+                  <option value="5">5-я струна</option>
+                  <option value="6">6-я струна</option>
+                </select></label
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="triad-all-inversions"
+              >
+                Показать все обращения по грифу
+              </button>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p id="triad-fingers-tip"></p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p id="triad-mistake-tip"></p>
+                </article>
+              </div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -631,7 +725,7 @@
                 </div>
               </article>
             </div>
-            <div class="exercise">
+            <div class="exercise" id="triads-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -694,6 +788,33 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <label>Обращение<select id="seventh-inversion"></select></label
+              ><label
+                >Басовая струна<select id="seventh-string-set">
+                  <option value="all">Все струны</option>
+                  <option value="4">4-я струна</option>
+                  <option value="5">5-я струна</option>
+                  <option value="6">6-я струна</option>
+                </select></label
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="seventh-all-inversions"
+              >
+                Показать все обращения по грифу
+              </button>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p id="seventh-fingers-tip"></p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p id="seventh-mistake-tip"></p>
+                </article>
+              </div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -811,7 +932,7 @@
                 </p>
               </div>
             </details>
-            <div class="exercise">
+            <div class="exercise" id="sevenths-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -872,6 +993,41 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <div id="scale-melodic-dir-wrap">
+                <div class="switch">
+                  <button type="button" data-scale-dir="up" class="active">
+                    Вверх</button
+                  ><button type="button" data-scale-dir="down" class="">
+                    Вниз
+                  </button>
+                </div>
+              </div>
+              <p>Позиции на грифе:</p>
+              <div class="switch">
+                <button type="button" data-scale-pos="all" class="active">
+                  Весь гриф</button
+                ><button type="button" data-scale-pos="1" class="">
+                  Позиция 1</button
+                ><button type="button" data-scale-pos="2" class="">
+                  Позиция 2</button
+                ><button type="button" data-scale-pos="3" class="">
+                  Позиция 3</button
+                ><button type="button" data-scale-pos="zones" class="">
+                  Три области
+                </button>
+              </div>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p id="scale-fingers-tip"></p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p id="scale-mistake-tip"></p>
+                </article>
+              </div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -1002,7 +1158,7 @@
               </p>
               <div id="scale-reference" class="scale-reference"></div>
             </details>
-            <div class="exercise">
+            <div class="exercise" id="scales-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -1073,6 +1229,21 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <button
+                type="button"
+                class="button button-ghost"
+                id="key-toggle-chords"
+              >
+                Показать аккорды тональности
+              </button>
+              <div id="key-diatonic-panel">
+                <h3>Аккорды и функции</h3>
+                <div id="key-diatonic-chords" class="chord-row"></div>
+                <h3>Пути модуляции</h3>
+                <div id="key-modulations-list" class="lesson-grid"></div>
+              </div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -1195,7 +1366,7 @@
               одинаковое, а ключевые знаки различаются. На стыке F♯ и D♭ квинта
               вверх записана как C♯ = D♭.
             </p>
-            <div class="exercise">
+            <div class="exercise" id="keys-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -1223,7 +1394,13 @@
                   data-key-task="modulation"
                   aria-pressed="false"
                 >
-                  Модуляция
+                  Модуляция</button
+                ><button
+                  type="button"
+                  data-key-task="chords"
+                  aria-pressed="false"
+                >
+                  Функции аккордов
                 </button>
               </div>
               <p class="task-prompt" id="key-quiz-prompt"></p>
@@ -1248,6 +1425,14 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <h3>О прогрессии</h3>
+              <p id="harmony-prog-desc"></p>
+              <p>
+                <strong>Мелодический ход:</strong>
+                <span id="harmony-melodic-moves"></span>
+              </p>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -1358,7 +1543,7 @@
                 </p>
               </div>
             </details>
-            <div class="exercise">
+            <div class="exercise" id="harmony-exercise-card">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
@@ -1405,6 +1590,29 @@
             aria-labelledby="intro-title"
             hidden
           >
+            <div class="panel extra-panel">
+              <label
+                >Ритм мотива<select id="composition-rhythm">
+                  <option value="quarters">Четверти</option>
+                  <option value="eighths">Восьмые</option>
+                  <option value="mixed">Смешанный</option>
+                </select></label
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="composition-save"
+              >
+                Сохранить мотив</button
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="composition-export"
+              >
+                Скачать JSON
+              </button>
+              <h3>Сохранённые мотивы</h3>
+              <div id="composition-saved-list"></div>
+            </div>
             <div class="panel board-panel">
               <div class="panel-heading">
                 <div>
@@ -1530,6 +1738,638 @@
               <a class="button button-light" href="#notes"
                 >К началу курса <span>↗</span></a
               >
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-pentatonic"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="panel">
+              <h2>Пять звуков вместо семи</h2>
+              <p>
+                Минорная пентатоника: 1–♭3–4–5–♭7. Мажорная: 1–2–3–5–6.
+                Например, ля минор: A–C–D–E–G. В мажоре убираем IV и VII
+                ступени, в натуральном миноре — II и ♭VI: исчезают полутоновые
+                соседства.
+              </p>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p>
+                    Ля на 6-й струне, 5-й лад; до — 8-й лад. Послушай разницу:
+                    малая терция задаёт минорную окраску. Легато: ударь первую
+                    ноту, затем молоточком прижми следующую; pull-off — обратное
+                    движение.
+                  </p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p>
+                    Не путай мажорную и минорную пентатонику от одной тоники.
+                    Бенд подтягивает струну вверх по высоте: сначала сравни цель
+                    на соседнем ладу, не тяни слишком сильно.
+                  </p>
+                </article>
+              </div>
+              <div class="controls">
+                <label>Тоника<select id="pent-root"></select></label
+                ><label
+                  >Тип<select id="pent-type">
+                    <option value="minorPent">Минорная</option>
+                    <option value="majorPent">Мажорная</option>
+                  </select></label
+                >
+              </div>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="pent-toggle-boxes"
+              >
+                Показать 5 боксов
+              </button>
+              <div class="switch">
+                <button type="button" data-pent-box="0" class="active">
+                  Весь гриф</button
+                ><button type="button" data-pent-box="1" class="">Бокс 1</button
+                ><button type="button" data-pent-box="2" class="">Бокс 2</button
+                ><button type="button" data-pent-box="3" class="">Бокс 3</button
+                ><button type="button" data-pent-box="4" class="">Бокс 4</button
+                ><button type="button" data-pent-box="5" class="">
+                  Бокс 5
+                </button>
+              </div>
+              <button type="button" class="button button-ghost" id="pent-play">
+                ♫ Слушать
+              </button>
+              <div class="fret-scroll">
+                <div class="fretboard" id="pent-board"></div>
+              </div>
+              <p id="pent-status"></p>
+              <p id="pent-box-detail"></p>
+            </div>
+            <div class="exercise" id="pentatonic-exercise-card">
+              <h2>Практика · пентатоника</h2>
+              <div class="switch">
+                <button type="button" data-pent-task="find" class="active">
+                  Найди ноты</button
+                ><button type="button" data-pent-task="ear" class="">
+                  На слух</button
+                ><button type="button" data-pent-task="box" class="">
+                  Сыграй бокс
+                </button>
+              </div>
+              <div id="pent-area-find">
+                <h3 id="pent-find-prompt"></h3>
+                <div class="fret-scroll">
+                  <div class="fretboard" id="pent-find-board"></div>
+                </div>
+                <p id="pent-find-picked"></p>
+                <p class="feedback" id="pent-find-feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="pent-find-check"
+                >
+                  Проверить</button
+                ><button
+                  type="button"
+                  class="button button-ghost"
+                  id="pent-find-next"
+                >
+                  Новое задание
+                </button>
+              </div>
+              <div id="pent-area-ear" hidden>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="pent-ear-play"
+                >
+                  ♫ Слушать фразу
+                </button>
+                <div id="pent-ear-answers" class="answers"></div>
+                <p id="pent-ear-feedback" class="feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="pent-ear-next"
+                >
+                  Новое задание
+                </button>
+              </div>
+              <div id="pent-area-box" hidden>
+                <h3 id="pent-box-prompt"></h3>
+                <div class="fret-scroll">
+                  <div class="fretboard" id="pent-box-board"></div>
+                </div>
+                <p id="pent-box-feedback" class="feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="pent-box-next"
+                >
+                  Другой бокс
+                </button>
+              </div>
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-blues"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="panel">
+              <h2>Блюзовая нота</h2>
+              <p>
+                Минорная блюзовая гамма — пентатоника плюс ♭5; мажорная — плюс
+                ♭3. В A миноре это E♭: 5-я струна, 6-й лад. Попробуй слайд от D
+                к E♭ и разреши в E; бендом плавно приблизься к соседнему звуку.
+              </p>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p>
+                    A–C–D–E♭–E–G: сравни E♭ и E на соседних ладах, услышишь
+                    напряжение и разрешение.
+                  </p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p>
+                    Блюзовую ноту не обязательно держать долго: попробуй
+                    провести её как проходящий звук к 4 или 5 ступени.
+                  </p>
+                </article>
+              </div>
+              <div class="controls">
+                <label>Тоника<select id="blues-root"></select></label
+                ><label
+                  >Тип<select id="blues-type">
+                    <option value="minorBlues">Минорная</option>
+                    <option value="majorBlues">Мажорная</option>
+                  </select></label
+                >
+              </div>
+              <div class="switch">
+                <button type="button" data-blues-box="0" class="active">
+                  Весь гриф</button
+                ><button type="button" data-blues-box="1" class="">
+                  Бокс 1</button
+                ><button type="button" data-blues-box="2" class="">
+                  Бокс 2</button
+                ><button type="button" data-blues-box="3" class="">
+                  Бокс 3</button
+                ><button type="button" data-blues-box="4" class="">
+                  Бокс 4</button
+                ><button type="button" data-blues-box="5" class="">
+                  Бокс 5
+                </button>
+              </div>
+              <button type="button" class="button button-ghost" id="blues-play">
+                ♫ Слушать гамму
+              </button>
+              <div class="fret-scroll">
+                <div class="fretboard" id="blues-board"></div>
+              </div>
+              <p id="blues-status"></p>
+              <p id="blues-summary"></p>
+              <h3 id="blues-guide-title"></h3>
+              <div class="switch">
+                <button type="button" data-blues-guide="A" class="active">
+                  Блюз в A</button
+                ><button type="button" data-blues-guide="E" class="">
+                  Блюз в E
+                </button>
+              </div>
+              <div id="blues-guide-chords" class="lesson-grid"></div>
+              <div id="blues-guide-bars" class="blues-bars"></div>
+              <p id="blues-guide-tip"></p>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="blues-guide-play"
+              >
+                ♫ Слушать квадрат
+              </button>
+            </div>
+            <div class="exercise" id="blues-exercise-card">
+              <h2>Практика · блюз</h2>
+              <div class="switch">
+                <button type="button" data-blues-task="blueNote" class="active">
+                  Блюзовая нота</button
+                ><button type="button" data-blues-task="buildBlues" class="">
+                  Собери гамму</button
+                ><button type="button" data-blues-task="blues12" class="">
+                  12 тактов
+                </button>
+              </div>
+              <div id="blues-area-note">
+                <h3 id="blues-note-prompt"></h3>
+                <div class="fret-scroll">
+                  <div class="fretboard" id="blues-note-board"></div>
+                </div>
+                <p id="blues-note-picked"></p>
+                <p class="feedback" id="blues-note-feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-note-next"
+                >
+                  Новое задание
+                </button>
+              </div>
+              <div id="blues-area-scale" hidden>
+                <h3 id="blues-scale-prompt"></h3>
+                <div class="fret-scroll">
+                  <div class="fretboard" id="blues-scale-board"></div>
+                </div>
+                <p id="blues-scale-picked"></p>
+                <p class="feedback" id="blues-scale-feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-scale-check"
+                >
+                  Проверить</button
+                ><button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-scale-next"
+                >
+                  Новое задание
+                </button>
+              </div>
+              <div id="blues-area-12" hidden>
+                <label>Тональность<select id="blues-12-key"></select></label>
+                <p id="blues-12-prompt"></p>
+                <div id="blues-12-grid" class="blues-bars"></div>
+                <p id="blues-12-feedback" class="feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-12-check"
+                >
+                  Проверить</button
+                ><button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-12-reset"
+                >
+                  Заново</button
+                ><button
+                  type="button"
+                  class="button button-ghost"
+                  id="blues-12-play"
+                >
+                  ♫ Слушать
+                </button>
+              </div>
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-ear-intervals"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="exercise" id="ei-trainer-card">
+              <h2>Настройки → слушаем → отвечаем</h2>
+              <p>
+                Начни с небольшого набора. Нажми «Слушать»: звук запускается
+                только по твоему действию.
+              </p>
+              <div class="controls">
+                <label
+                  >Диапазон<select id="ei-preset">
+                    <option value="all">Все 12</option>
+                    <option value="consonances">Консонансы</option>
+                    <option value="perfectTritone">Чистые и тритон</option>
+                    <option value="thirdsSixths">Терции и сексты</option>
+                    <option value="secondsSevenths">Диссонансы</option>
+                    <option value="custom">Свои интервалы</option>
+                  </select></label
+                ><label
+                  >Режим<select id="ei-mode">
+                    <option value="asc">Восходящий</option>
+                    <option value="desc">Нисходящий</option>
+                    <option value="harm">Одновременно</option>
+                    <option value="melodic">Туда-обратно</option>
+                    <option value="mixed">Смешанный</option>
+                  </select></label
+                ><label
+                  >Интервал времени<select id="ei-speed">
+                    <option value="0.9">Медленно</option>
+                    <option value="0.62">Средне</option>
+                    <option value="0.35">Быстро</option>
+                  </select></label
+                ><label
+                  >Тембр<select id="ei-timbre">
+                    <option value="guitar">Гитара</option>
+                    <option value="piano">Пиано</option>
+                  </select></label
+                >
+              </div>
+              <div id="ei-interval-chips" class="chips"></div>
+              <button type="button" class="button button-ghost" id="ei-play">
+                ♫ Слушать</button
+              ><button type="button" class="button button-ghost" id="ei-replay">
+                Повторить</button
+              ><button type="button" class="button button-ghost" id="ei-next">
+                Следующее
+              </button>
+              <div id="ei-answers" class="answers"></div>
+              <p id="ei-feedback" class="feedback"></p>
+              <div id="ei-staff" class="staff"></div>
+              <div class="fret-scroll">
+                <div class="fretboard" id="ei-board"></div>
+              </div>
+              <p id="ei-board-status"></p>
+              <h3>Статистика</h3>
+              <div class="stats-row">
+                <span>Серия: <b id="ei-stat-streak">0</b></span
+                ><span>Рекорд: <b id="ei-stat-best">0</b></span
+                ><span>Попытки: <b id="ei-stat-total">0</b></span
+                ><span>Точность: <b id="ei-stat-acc">0</b></span>
+              </div>
+              <p id="ei-weak-list"></p>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="ei-train-weak"
+              >
+                Тренировать слабые
+              </button>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Интервал</th>
+                      <th>Вверх</th>
+                      <th>Вниз</th>
+                      <th>Вместе</th>
+                      <th>Туда-обратно</th>
+                      <th>Всего</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ei-matrix-body"></tbody>
+                </table>
+              </div>
+              <button type="button" class="button button-ghost" id="ei-share">
+                Поделиться результатом</button
+              ><button type="button" class="button button-ghost" id="ei-reset">
+                Сбросить статистику
+              </button>
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-ear-chords"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="exercise" id="ec-trainer-card">
+              <h2>Настройки → слушаем → отвечаем</h2>
+              <p>
+                Начни с небольшого набора. Нажми «Слушать»: звук запускается
+                только по твоему действию.
+              </p>
+              <div class="controls">
+                <label
+                  >Типы<select id="ec-group">
+                    <option value="all">Все</option>
+                    <option value="triads">Трезвучия</option>
+                    <option value="sevenths">Септаккорды</option>
+                  </select></label
+                ><label
+                  >Режим<select id="ec-mode">
+                    <option value="asc">Восходящий</option>
+                    <option value="harm">Одновременно</option>
+                  </select></label
+                ><label
+                  >Тембр<select id="ec-timbre">
+                    <option value="guitar">Гитара</option>
+                    <option value="piano">Пиано</option>
+                  </select></label
+                >
+              </div>
+              <button type="button" class="button button-ghost" id="ec-play">
+                ♫ Слушать</button
+              ><button type="button" class="button button-ghost" id="ec-replay">
+                Повторить</button
+              ><button type="button" class="button button-ghost" id="ec-next">
+                Следующее
+              </button>
+              <div id="ec-answers" class="answers"></div>
+              <p id="ec-feedback" class="feedback"></p>
+              <div id="ec-staff" class="staff"></div>
+              <div class="fret-scroll">
+                <div class="fretboard" id="ec-board"></div>
+              </div>
+              <p id="ec-board-status"></p>
+              <h3>Статистика</h3>
+              <div class="stats-row">
+                <span>Серия: <b id="ec-stat-streak">0</b></span
+                ><span>Рекорд: <b id="ec-stat-best">0</b></span
+                ><span>Попытки: <b id="ec-stat-total">0</b></span
+                ><span>Точность: <b id="ec-stat-acc">0</b></span>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Тип</th>
+                      <th>Формула</th>
+                      <th>Верно / всего</th>
+                      <th>Точность</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ec-stats-body"></tbody>
+                </table>
+              </div>
+              <button type="button" class="button button-ghost" id="ec-share">
+                Поделиться результатом</button
+              ><button type="button" class="button button-ghost" id="ec-reset">
+                Сбросить статистику
+              </button>
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-rhythm"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="panel">
+              <h2>Ритм — пульс музыки</h2>
+              <p>
+                Целая длится четыре четверти, половинная — две, восьмая —
+                половину четверти, шестнадцатая — четверть. Точка продлевает
+                длительность наполовину. Синкопа переносит акцент на слабую
+                долю. В 4/4 четыре четверти, в 3/4 три, в 6/8 шесть восьмых,
+                обычно две группы по три.
+              </p>
+              <div id="rhythm-durations-grid" class="lesson-grid"></div>
+              <div class="controls">
+                <label>Размер<select id="rhythm-meter"></select></label
+                ><label
+                  >Темп
+                  <input
+                    id="rhythm-bpm"
+                    type="range"
+                    min="50"
+                    max="180"
+                    value="92"
+                  /><span id="rhythm-bpm-val">92 BPM</span></label
+                ><label
+                  ><input id="rhythm-use-drums" type="checkbox" />
+                  Ударные</label
+                >
+              </div>
+              <p id="rhythm-meter-desc"></p>
+              <div id="rhythm-ruler" class="beat-ruler"></div>
+              <div id="rhythm-drum-grid"></div>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="rhythm-toggle"
+              >
+                ▶ Запустить метроном
+              </button>
+            </div>
+            <div class="exercise" id="rhythm-exercise-card">
+              <h2>Практика ритма</h2>
+              <div class="switch">
+                <button type="button" data-rhythm-task="tap" class="active">
+                  Хлопни ритм</button
+                ><button type="button" data-rhythm-task="meter" class="">
+                  Размер на слух
+                </button>
+              </div>
+              <div id="rhythm-area-tap">
+                <label
+                  >Рисунок<select id="rhythm-pattern-select"></select
+                ></label>
+                <p id="rhythm-tap-hint"></p>
+                <div id="rhythm-tap-visual" class="beat-ruler"></div>
+                <p id="rhythm-tap-status"></p>
+                <p id="rhythm-tap-feedback" class="feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="rhythm-tap-start"
+                >
+                  Старт</button
+                ><button
+                  type="button"
+                  class="button button-ghost"
+                  id="rhythm-tap-hit"
+                >
+                  Хлопнуть / пробел
+                </button>
+              </div>
+              <div id="rhythm-area-meter" hidden>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="rhythm-meter-play"
+                >
+                  ♫ Слушать
+                </button>
+                <div id="rhythm-meter-answers" class="answers"></div>
+                <p id="rhythm-meter-feedback" class="feedback"></p>
+                <button
+                  type="button"
+                  class="button button-ghost"
+                  id="rhythm-meter-next"
+                >
+                  Другое задание
+                </button>
+              </div>
+            </div>
+          </section>
+          <section
+            class="view"
+            id="view-sight-reading"
+            hidden
+            aria-labelledby="intro-title"
+          >
+            <div class="panel">
+              <h2>Читаем ноты на гитаре</h2>
+              <p>
+                Скрипичный ключ: линии снизу вверх — E G B D F. Между ними — F A
+                C E. Гитарные ноты обычно записываются на октаву выше звучания:
+                открытая первая струна звучит E4, а записывается E5. Пауза —
+                знак молчания, её длительность считается как длительность ноты.
+              </p>
+              <div class="lesson-grid">
+                <article class="lesson-card">
+                  <h3>На пальцах</h3>
+                  <p>
+                    Открытая первая струна — E; 1-й лад — F. Сравни звук и
+                    положение на стане.
+                  </p>
+                </article>
+                <article class="lesson-card">
+                  <h3>Типичная ошибка новичка</h3>
+                  <p>
+                    Одинаковое название в разных октавах — разные высоты.
+                    Выбирай именно ту высоту, что задана.
+                  </p>
+                </article>
+              </div>
+            </div>
+            <div class="exercise" id="sr-trainer-card">
+              <h2>Нота → гриф</h2>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="sr-transposition-toggle"
+              >
+                Режим: реальная высота звучания
+              </button>
+              <p id="sr-clef-caption"></p>
+              <div id="sr-staff" class="staff"></div>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="sr-play-note"
+              >
+                ♫ Слушать</button
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="sr-next-note"
+              >
+                Другая нота</button
+              ><button
+                type="button"
+                class="button button-ghost"
+                id="sr-sprint-btn"
+              >
+                Спринт 30 секунд
+              </button>
+              <p>
+                Время: <b id="sr-timer">30 с</b> · Счёт:
+                <b id="sr-sprint-score">0</b> · Рекорд:
+                <b id="sr-best-score">0</b>
+              </p>
+              <div class="fret-scroll">
+                <div class="fretboard" id="sr-board"></div>
+              </div>
+              <p id="sr-board-status"></p>
+              <p id="sr-feedback" class="feedback">
+                Найди на грифе ноту со стана.
+              </p>
+              <button
+                type="button"
+                class="button button-ghost"
+                id="sr-share-btn"
+              >
+                Поделиться результатом
+              </button>
             </div>
           </section>
           <footer class="footer">
