@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f7f1" />
+    <meta
+      name="description"
+      content="Ладно. Сольфеджио — понятная теория музыки для гитаристов: пентатоника, блюз, интервалы и аккорды на слух, ритм, чтение с листа."
+    />
+    <title>Ладно. Сольфеджио — теория музыки на гитаре</title>
+    <link rel="stylesheet" href="style.css" />
+    <!--
+      Тема применяется до отрисовки: если в localStorage уже тёмная, страница
+      не мигнёт светлым фоном. Полное состояние читает ui/state.js.
+    -->
+    <script>
+      try {
+        var saved = JSON.parse(localStorage.getItem("ladno.progress.v2") || "{}");
+        if (saved && saved.settings && saved.settings.theme === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (error) {
+        /* повреждённые данные — просто остаёмся на светлой теме */
+      }
+    </script>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23244f3d'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' fill='%23d9e6ae' text-anchor='middle'%3E%D0%BB%3C/text%3E%3C/svg%3E"
+    />
+    <!--
+      Библиотеки подключаются до модулей и только как дополнение:
+      без CDN сайт остаётся рабочим (свой SVG-стан и синтезатор на Web Audio).
+      Ключевые DAG-скрипты отдают window.Vex / window.Tone.
+    -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"
+    ></script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <a class="sr-only" href="#main-content">Перейти к содержимому</a>
+
+    <div class="app-shell">
+      <!-- Боковая навигация: 14 разделов, сгруппированы по смыслу. -->
+      <aside class="sidebar" aria-label="Навигация по курсу">
+        <a class="brand" href="#notes" aria-label="Ладно. Сольфеджио — в начало курса">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4C10.2 4 5 7.5 5 13.4 5 20 11.8 26 16 28c4.2-2 11-8 11-14.6C27 7.5 21.8 4 16 4Z" />
+              <path d="M12 15.5h8M12 19h6" fill="none" />
+            </svg>
+          </span>
+          <span>
+            <strong>ладно<span class="brand-dot">.</span></strong>
+            <small>сольфеджио на гитаре</small>
+          </span>
+        </a>
+
+        <div class="sidebar-label">ТВОЙ УЧЕБНИК <span>01 — 14</span></div>
+        <nav class="navigation" aria-label="Разделы курса" id="navigation">
+          <div class="nav-group-title">Основы</div>
+          <a href="#notes" data-nav="notes"><span class="nav-no">01</span><span>Ноты и октавы</span><span class="nav-arrow">↗</span></a>
+          <a href="#intervals" data-nav="intervals"><span class="nav-no">02</span><span>Интервалы</span><span class="nav-arrow">↗</span></a>
+          <a href="#triads" data-nav="triads"><span class="nav-no">03</span><span>Трезвучия</span><span class="nav-arrow">↗</span></a>
+          <a href="#sevenths" data-nav="sevenths"><span class="nav-no">04</span><span>Септаккорды</span><span class="nav-arrow">↗</span></a>
+          <div class="nav-group-title">Гармония</div>
+          <a href="#scales" data-nav="scales"><span class="nav-no">05</span><span>Гаммы и лады</span><span class="nav-arrow">↗</span></a>
+          <a href="#keys" data-nav="keys"><span class="nav-no">06</span><span>Квинтовый круг</span><span class="nav-arrow">↗</span></a>
+          <a href="#harmony" data-nav="harmony"><span class="nav-no">07</span><span>Гармония</span><span class="nav-arrow">↗</span></a>
+          <a href="#composition" data-nav="composition"><span class="nav-no">08</span><span>Композиция</span><span class="nav-arrow">↗</span></a>
+          <div class="nav-group-title">Глубже</div>
+          <a href="#pentatonic" data-nav="pentatonic"><span class="nav-no">09</span><span>Пентатоника</span><span class="nav-arrow">↗</span></a>
+          <a href="#blues" data-nav="blues"><span class="nav-no">10</span><span>Блюзовые гаммы</span><span class="nav-arrow">↗</span></a>
+          <div class="nav-group-title">Тренировка</div>
+          <a href="#ear-intervals" data-nav="ear-intervals"><span class="nav-no">11</span><span>Слух: интервалы</span><span class="nav-arrow">↗</span></a>
+          <a href="#ear-chords" data-nav="ear-chords"><span class="nav-no">12</span><span>Слух: аккорды</span><span class="nav-arrow">↗</span></a>
+          <a href="#rhythm" data-nav="rhythm"><span class="nav-no">13</span><span>Ритм и грув</span><span class="nav-arrow">↗</span></a>
+          <a href="#notation" data-nav="notation"><span class="nav-no">14</span><span>Чтение с листа</span><span class="nav-arrow">↗</span></a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="course-progress">
+            <div class="course-progress-head">
+              <span>Прогресс курса</span>
+              <b data-course-percent>0 / 14</b>
+            </div>
+            <div class="course-bar"><span data-course-bar></span></div>
+          </div>
+          <div class="sidebar-tip">
+            <span class="tip-icon" aria-hidden="true">✳</span>
+            <div>
+              <strong>Не спеши.</strong>
+              <p>Пара минут каждый день — уже хорошая практика.</p>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            СДЕЛАНО ДЛЯ ТЕХ,<br />КТО ТОЛЬКО НАЧИНАЕТ <span>♡</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main" id="main-content">
+        <div class="topbar">
+          <nav class="breadcrumbs" aria-label="Хлебные крошки">
+            <a href="#notes">САМОУЧИТЕЛЬ</a>
+            <i aria-hidden="true">/</i>
+            <b id="breadcrumb" aria-current="page">Ноты и октавы</b>
+          </nav>
+          <div class="topbar-right">
+            <span class="audio-indicator" id="audio-indicator" title="Звук включается по клику">
+              <span class="sound-wave" aria-hidden="true">◖))</span>
+              <span id="audio-status">Звук по нажатию</span>
+            </span>
+            <span class="top-progress" title="Текущая серия правильных ответов">
+              <span aria-hidden="true">✦</span>
+              <b id="top-streak">0</b>
+              <span id="top-best">лучшая 0</span>
+            </span>
+            <button
+              class="icon-button"
+              id="share-button"
+              type="button"
+              title="Поделиться результатом"
+              aria-label="Поделиться результатом"
+            >↗</button>
+            <button
+              class="icon-button"
+              id="theme-toggle"
+              type="button"
+              title="Тёмная тема"
+              aria-label="Включить тёмную тему"
+            >☀</button>
+          </div>
+        </div>
+
+        <div class="page">
+          <header class="page-intro">
+            <div class="intro-main">
+              <div class="eyebrow">
+                <span class="eyebrow-dot" aria-hidden="true"></span>
+                <span id="intro-eyebrow">01 / САМОЕ НАЧАЛО</span>
+              </div>
+              <h1 id="intro-title">Музыка начинается<br /><em>с одной ноты.</em></h1>
+              <p id="intro-text">
+                Разберёмся в нотах, найдём их на грифе и услышим, как они звучат. Всё по порядку, без сложных слов.
+              </p>
+              <div class="info-strip" id="intro-chips"></div>
+            </div>
+            <div class="intro-stamp" aria-hidden="true">
+              <div class="stamp-top">УЧИСЬ В СВОЁМ ТЕМПЕ <span>↗</span></div>
+              <div class="stamp-art">
+                <span>♫</span>
+                <div><b id="intro-number">01</b><small>/ 14</small></div>
+              </div>
+              <div class="stamp-bottom">ТЕОРИЯ + ПРАКТИКА</div>
+            </div>
+          </header>
+
+          <!--
+            Контейнеры разделов пустые: каждый раздел монтируется при первом открытии
+            из ui/sections/*.js. Так начальная загрузка остаётся быстрой.
+          -->
+          <section class="view" id="view-notes" aria-labelledby="intro-title"></section>
+          <section class="view" id="view-intervals" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-triads" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-sevenths" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-scales" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-keys" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-harmony" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-composition" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-pentatonic" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-blues" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-ear-intervals" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-ear-chords" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-rhythm" aria-labelledby="intro-title" hidden></section>
+          <section class="view" id="view-notation" aria-labelledby="intro-title" hidden></section>
+
+          <footer class="footer">
+            <div class="footer-brand">
+              <b>ладно<span class="brand-dot">.</span></b>
+              <span>МУЗЫКА ПОНЯТНЫМ ЯЗЫКОМ</span>
+            </div>
+            <div class="footer-links">
+              <span id="storage-status">Прогресс хранится в этом браузере</span>
+              <button id="reset-progress" type="button">Сбросить весь прогресс</button>
+            </div>
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <noscript>
+      <div class="noscript">
+        Для интерактивного грифа, тренажёров и звука включите JavaScript в браузере.
+      </div>
+    </noscript>
+  </body>
+</html>
