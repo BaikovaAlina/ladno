@@ -1,0 +1,346 @@
+/*
+ * 05. ГАММЫ И ЛАДЫ
+ * Все гаммы курса, три позиции на грифе, наглядная формула шагов,
+ * стан и упражнение «найди ноты гаммы».
+ */
+import { bestPosition, ROOTS, STRINGS, mod, parseNote, prettyNote, writtenNote } from "../../core/notes.js";
+import {
+  SCALES, getScale, scaleNames, scaleNoteList, scalePositions,
+} from "../../core/scales.js";
+import { playSequence } from "../../core/audio.js";
+import { byId, fillSelect, setFeedback, setSwitch } from "../dom.js";
+import { renderFretboard } from "../fretboard.js";
+import { renderStaff } from "../staff.js";
+import { record } from "../state.js";
+
+const state = { mode: "scale", position: null, selected: new Set(), quiz: null };
+
+export function mount(container) {
+  container.innerHTML = `
+    <div class="panel board-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="overline"><span class="tiny-dot"></span> ВСЯ КАРТА ПЕРЕД ТОБОЙ</div>
+          <h2>Гамма на грифе</h2>
+          <p>Корень выделен тёмным. Кликни на любую позицию, чтобы услышать её.</p>
+        </div>
+        <button class="button button-dark" id="scale-play" type="button"><span>▶</span> Слушать гамму</button>
+      </div>
+
+      <div class="controls">
+        <label>Тоника <select id="scale-root"></select></label>
+        <label>Гамма или лад <select id="scale-type"></select></label>
+        <div class="switch" role="group" aria-label="Вид грифа">
+          <button type="button" class="active" data-scale-mode="scale" aria-pressed="true">Только гамма</button>
+          <button type="button" data-scale-mode="all" aria-pressed="false">Все ноты</button>
+        </div>
+        <button class="button button-ghost" id="scale-random" type="button">Случайная гамма <span>↻</span></button>
+      </div>
+
+      <div class="fret-scroll">
+        <div id="scale-board" class="fretboard" aria-label="Ноты выбранной гаммы на грифе"></div>
+      </div>
+      <div class="board-footer">
+        <div class="legend">
+          <span><i class="legend-root"></i> тоника</span>
+          <span><i class="legend-note"></i> ноты гаммы</span>
+          <span><i class="legend-muted"></i> остальные</span>
+        </div>
+        <span id="scale-status" class="note-status" aria-live="polite">Нажми на ноту ♫</span>
+      </div>
+
+      <div class="scale-info">
+        <div>
+          <div class="overline">ФОРМУЛА ШАГОВ</div>
+          <strong id="scale-formula"></strong>
+          <p>Т = 2 лада · П = 1 лад · 1½Т = 3 лада</p>
+        </div>
+        <div>
+          <div class="overline">НА ПАЛЬЦАХ</div>
+          <strong id="scale-name"></strong>
+          <p id="scale-description"></p>
+        </div>
+      </div>
+      <div class="info-strip" id="scale-degrees"></div>
+
+      <div class="score-block">
+        <div>
+          <div class="overline">НОТЫ ГАММЫ</div>
+          <strong id="scale-summary"></strong>
+          <p>Восходящее движение, с повтором тоники на октаву выше.</p>
+        </div>
+        <div id="scale-staff" class="staff" aria-label="Гамма на нотном стане"></div>
+      </div>
+
+      <div class="composition-head">
+        <div>
+          <div class="overline">ТРИ ПОЗИЦИИ НА ГРИФЕ</div>
+          <p>Нажми на позицию, чтобы подсветить её окно на грифе. Так гамма перестаёт быть «одним боксом».</p>
+        </div>
+      </div>
+      <div class="position-strip" id="scale-positions"></div>
+      <div class="plain-block" id="scale-tip" style="margin-top:14px"></div>
+      <div class="mistake-block" id="scale-mistake"></div>
+      <p class="notation-note">На стане записана реальная высота звучания; гитарные партии часто пишут октавой выше.</p>
+    </div>
+
+    <div class="section-title">
+      <div>
+        <div class="overline">ПАЛИТРА ДЛЯ МЕЛОДИЙ</div>
+        <h2>Не заучивай. <em>Слушай.</em></h2>
+      </div>
+      <span class="reading-time">≈ 6 МИН ЧТЕНИЯ</span>
+    </div>
+
+    <div class="theory-grid two">
+      <article class="lesson-card">
+        <span class="card-no">01 <span>↗</span></span>
+        <h3>Гамма и тоника</h3>
+        <p>Гамма — ноты в порядке высоты; её опорная нота называется <strong>тоникой</strong>. C-мажор: C D E F G A B. На 5-й струне начни с C на 3-м ладу и поднимайся по формуле.</p>
+        <div class="card-example">C D E F G A B C <span>семь ступеней</span></div>
+        <div class="plain-block"><b>На пальцах:</b> 5-я струна: 3-й лад C, 5-й D. 4-я: 2-й E, 3-й F. Обе позиции — рядом.</div>
+        <div class="mistake-block"><b>Типичная ошибка:</b> начинать гамму не с тоники и путать центр. От тоники зависит, мажор это или минор.</div>
+      </article>
+      <article class="lesson-card">
+        <span class="card-no">02 <span>↗</span></span>
+        <h3>Один набор — разные лады</h3>
+        <p>Мажор, натуральный минор и семь ладов используют те же звуки, но строятся от разных ступеней. C-мажор = A-натуральный минор по составу нот.</p>
+        <div class="card-example">C D E F G A B = A B C D E F G <span>одинаковые ноты</span></div>
+        <div class="plain-block"><b>На пальцах:</b> сыграй A B C D E F G и остановись на A — получится минор. Те же лады на 3-й струне.</div>
+        <div class="mistake-block"><b>Типичная ошибка:</b> думать, что лад — это «другая гамма». Это тот же материал с другим центром.</div>
+      </article>
+    </div>
+
+    <details class="reference">
+      <summary>Все гаммы и лады: формулы и объяснения <span>＋</span></summary>
+      <p>Каждая формула идёт от тоники до её повтора на октаву выше. Мажор называют ионийским ладом, натуральный минор — эолийским.</p>
+      <div id="scale-reference" class="scale-reference"></div>
+    </details>
+
+    <div class="exercise" id="scale-exercise">
+      <div class="exercise-heading">
+        <div>
+          <div class="overline"><span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 05</div>
+          <h2>Найди ноты гаммы</h2>
+          <p id="scale-quiz-prompt"></p>
+        </div>
+        <span class="exercise-stats" data-stats="scale"></span>
+      </div>
+      <p class="task-hint">Выбери каждый звук по одному разу в любом месте грифа, без лишних нот. Повторный клик отменяет выбор.</p>
+      <div class="fret-scroll exercise-board">
+        <div id="scale-quiz-board" class="fretboard" aria-label="Найти ноты гаммы"></div>
+      </div>
+      <div class="quiz-status" id="scale-quiz-status" aria-live="polite">Нажми на ноту ♫</div>
+      <div class="selected-line">Выбрано: <strong id="scale-picked">пока ничего</strong></div>
+      <div class="exercise-bottom">
+        <div>
+          <button class="button button-dark" id="scale-check" type="button">Проверить <span>↗</span></button>
+          <p class="feedback" id="scale-feedback" aria-live="polite">Выбирай ноты на грифе.</p>
+        </div>
+        <div class="button-row">
+          <button class="button button-ghost" id="scale-reset" type="button">Заново</button>
+          <button class="button button-ghost" id="scale-quiz-random" type="button">Случайная гамма <span>↗</span></button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  fillSelect("scale-root", ROOTS.map((r) => ({ value: r, label: prettyNote(r) })), "C");
+  fillSelect("scale-type", SCALES.map((item) => ({ value: item.id, label: item.name })), "major");
+
+  document.querySelectorAll("[data-scale-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.mode = button.dataset.scaleMode;
+      setSwitch("[data-scale-mode]", "data-scale-mode", state.mode);
+      renderScale();
+    });
+  });
+  ["scale-root", "scale-type"].forEach((id) => byId(id).addEventListener("change", () => {
+    state.position = null;
+    renderScale();
+    newQuiz();
+  }));
+  byId("scale-play").addEventListener("click", () => {
+    const root = byId("scale-root").value;
+    const scale = getScale(byId("scale-type").value);
+    playSequence(scaleNoteList(root, scale).map((note) => note.midi), 0.3, 0.55);
+  });
+  byId("scale-random").addEventListener("click", () => {
+    byId("scale-root").value = ROOTS[Math.floor(Math.random() * ROOTS.length)];
+    byId("scale-type").value = SCALES[Math.floor(Math.random() * SCALES.length)].id;
+    state.position = null;
+    renderScale();
+    newQuiz();
+  });
+  byId("scale-quiz-random").addEventListener("click", () => {
+    byId("scale-root").value = ROOTS[Math.floor(Math.random() * ROOTS.length)];
+    byId("scale-type").value = SCALES[Math.floor(Math.random() * SCALES.length)].id;
+    renderScale();
+    newQuiz();
+  });
+  byId("scale-reset").addEventListener("click", () => { state.selected.clear(); drawQuiz(); });
+  byId("scale-check").addEventListener("click", checkQuiz);
+
+  fillReference();
+  renderScale();
+  newQuiz();
+}
+
+function fillReference() {
+  byId("scale-reference").innerHTML = SCALES.map((item) => `
+    <article>
+      <h3>${item.name}</h3>
+      <p class="formula">${item.formula}</p>
+      <p>${item.description}</p>
+    </article>`).join("");
+}
+
+function renderScale() {
+  const root = byId("scale-root").value;
+  const scale = getScale(byId("scale-type").value);
+  const rootPc = parseNote(root).pc;
+  const names = scaleNames(root, scale);
+  const nameLookup = {};
+  names.forEach((name) => { nameLookup[parseNote(name).pc] = name; });
+
+  const positions = scalePositions(rootPc, scale, 3);
+  if (state.position == null) state.position = positions[0]?.id || 1;
+  const activePosition = positions.find((item) => item.id === state.position) || positions[0];
+
+  const highlighted = [];
+  for (let string = 0; string < STRINGS.length; string++) {
+    for (let fret = 0; fret <= 15; fret++) {
+      const midi = STRINGS[string].midi + fret;
+      if (state.mode !== "all" && !scale.offsets.includes(mod(midi - rootPc))) continue;
+      highlighted.push({
+        string, fret,
+        kind: mod(midi - rootPc) === 0 ? "root" : "note",
+      });
+    }
+  }
+
+  renderFretboard({
+    container: "scale-board",
+    highlighted,
+    names: nameLookup,
+    showAll: state.mode === "all",
+    status: "scale-status",
+    boxes: activePosition
+      ? [{ from: activePosition.fretFrom, to: activePosition.fretTo, label: activePosition.title }]
+      : [],
+  });
+
+  byId("scale-formula").textContent = `${scale.formula}  ·  ${scale.degrees.join(" ")}`;
+  byId("scale-name").textContent = `${prettyNote(root)} ${scale.name.toLowerCase()}`;
+  byId("scale-description").textContent = scale.description;
+  byId("scale-degrees").innerHTML = scale.degrees
+    .map((degree, index) => `<span class="chip${degree === "1" ? " success" : " muted"}">${degree}: <b>${prettyNote(names[index])}</b></span>`)
+    .join("");
+  byId("scale-tip").innerHTML = `<span class="block-label">На пальцах</span>${scale.plain}`;
+  byId("scale-mistake").innerHTML = `<span class="block-label">Типичная ошибка новичка</span>${scale.mistake}`;
+
+  const notes = scaleNoteList(root, scale);
+  byId("scale-summary").textContent = notes.map((note) => writtenNote(note.name, note.midi)).join(" · ");
+  renderStaff("scale-staff", notes, { durations: notes.map(() => "q"), ariaLabel: `${prettyNote(root)} ${scale.name}` });
+
+  byId("scale-positions").innerHTML = positions.map((item) => `
+    <button type="button" class="position-pill ${item.id === activePosition?.id ? "active" : ""}" data-position="${item.id}" title="${item.hint}">
+      ${item.title} · лады ${item.fretFrom}–${item.fretTo}
+    </button>`).join("");
+  byId("scale-positions").querySelectorAll("[data-position]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.position = Number(button.dataset.position);
+      renderScale();
+    });
+  });
+}
+
+function newQuiz() {
+  const root = byId("scale-root").value;
+  const scale = getScale(byId("scale-type").value);
+  state.selected.clear();
+  state.quiz = {
+    root, scale,
+    pcs: scale.offsets.map((offset) => mod(parseNote(root).pc + offset)),
+    answered: false,
+  };
+  byId("scale-quiz-prompt").textContent =
+    `Выбери все ноты ${prettyNote(root)} ${scale.name.toLowerCase()} — по одному разу каждую.`;
+  setFeedback("scale-feedback", "Выбирай ноты на грифе.");
+  drawQuiz();
+}
+
+function drawQuiz(reveal = false) {
+  const quiz = state.quiz;
+  if (!quiz) return;
+  const names = {};
+  scaleNames(quiz.root, quiz.scale).forEach((name) => { names[parseNote(name).pc] = name; });
+  // После ответа показываем по одной удобной позиции для каждой ноты гаммы.
+  const highlighted = reveal
+    ? quiz.pcs.map((pc) => {
+        const position = bestPosition(48 + pc);
+        return {
+          string: position.string,
+          fret: position.fret,
+          kind: pc === parseNote(quiz.root).pc ? "root" : "note",
+        };
+      })
+    : [];
+  renderFretboard({
+    container: "scale-quiz-board",
+    highlighted,
+    selected: [...state.selected],
+    showAll: true,
+    names,
+    clickable: true,
+    status: "scale-quiz-status",
+    onNoteClick: (position) => {
+      if (state.quiz.answered) return;
+      if (state.selected.has(position.key)) state.selected.delete(position.key);
+      else state.selected.add(position.key);
+      drawQuiz();
+    },
+  });
+  const picked = [...state.selected].map((key) => {
+    const [string, fret] = key.split(":").map(Number);
+    return prettyNote(names[mod(STRINGS[string].midi + fret)] || "?");
+  });
+  byId("scale-picked").textContent = picked.length ? picked.join(" · ") : "пока ничего";
+}
+
+function checkQuiz() {
+  const quiz = state.quiz;
+  if (!quiz || quiz.answered) return;
+  if (!state.selected.size) {
+    setFeedback("scale-feedback", "Сначала выбери хотя бы одну ноту на грифе.", "error");
+    return;
+  }
+  const pickedPcs = [...state.selected].map((key) => {
+    const [string, fret] = key.split(":").map(Number);
+    return mod(STRINGS[string].midi + fret);
+  });
+  const uniquePicked = [...new Set(pickedPcs)];
+  const extra = uniquePicked.filter((pc) => !quiz.pcs.includes(pc));
+  const missing = quiz.pcs.filter((pc) => !uniquePicked.includes(pc));
+  const correct = extra.length === 0 && missing.length === 0;
+  quiz.answered = true;
+  record("scale", correct);
+
+  const root = quiz.root;
+  const scale = quiz.scale;
+  const names = scaleNames(root, scale);
+  const label = (pc) => {
+    const index = quiz.pcs.indexOf(pc);
+    return index >= 0 ? `${prettyNote(names[index])} (${scale.degrees[index]})` : prettyNote(["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"][pc]);
+  };
+  let text;
+  if (correct) text = `Верно! ${prettyNote(root)} ${scale.name.toLowerCase()}: ${names.map(prettyNote).join(" – ")}.`;
+  else {
+    const parts = [];
+    if (missing.length) parts.push(`не хватает: ${missing.map(label).join(", ")}`);
+    if (extra.length) parts.push(`лишние: ${extra.map(label).join(", ")}`);
+    text = `Почти. ${parts.join("; ")}. Нужны: ${names.map(prettyNote).join(" – ")}.`;
+  }
+  setFeedback("scale-feedback", text, correct ? "success" : "error");
+  drawQuiz(true);
+}
