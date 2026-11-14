@@ -3,15 +3,14 @@
  * SVG-круг с 12 узлами, ключевые знаки, аккорды тональности I–vii° с
  * функциями и готовые пути модуляции.
  */
-import { ROOTS, parseNote, prettyNote } from "../../core/notes.js";
+import { parseNote, prettyNote } from "../../core/notes.js";
 import {
-  CIRCLE, ENHARMONIC_KEYS, DEGREE_INFO, circleNeighbours, keySignList,
+  CIRCLE, ENHARMONIC_KEYS, DEGREE_INFO, circleNeighbours,
   modulations, prettySigns, keySignText,
 } from "../../core/keys.js";
-import { chordOfDegree, makeChord, getTriad, getSeventh } from "../../core/chords.js";
-import { playProgressionAudio, strum } from "../../core/audio.js";
+import { chordOfDegree, makeChord, getTriad } from "../../core/chords.js";
+import { playChord, playProgressionAudio, strum } from "../../core/audio.js";
 import { byId, setFeedback } from "../dom.js";
-import { playChord } from "../../core/audio.js";
 import { record } from "../state.js";
 
 const state = { index: 0, mode: "major", variant: null, task: "signs", quiz: null, showDegrees: true };

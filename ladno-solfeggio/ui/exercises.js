@@ -8,9 +8,8 @@
  *  - countdown — таймер для «30 секунд»;
  *  - buildNotePool — набор нот для заданий.
  */
-import { STRINGS, bestPosition, midiOctave, mod, prettyNote, CHROMATIC, shuffle } from "../core/notes.js";
-import { answerButtons, byId, el, makeOptions, setFeedback, unlockAnswers } from "./dom.js";
-import { playNote } from "../core/audio.js";
+import { STRINGS, bestPosition, midiOctave, mod, prettyNote, CHROMATIC } from "../core/notes.js";
+import { answerButtons, byId, setFeedback, unlockAnswers } from "./dom.js";
 import { accuracy } from "../core/storage.js";
 import { toast } from "./state.js";
 

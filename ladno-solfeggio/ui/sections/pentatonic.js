@@ -9,9 +9,7 @@
 import {
   ROOTS, STRINGS, bestPosition, mod, parseNote, pentatonicBoxes, prettyNote,
 } from "../../core/notes.js";
-import {
-  PENTATONIC_TYPES, getScale, scaleNames, pentatonicPositions,
-} from "../../core/scales.js";
+import { getScale, scaleNames, pentatonicPositions } from "../../core/scales.js";
 import { playSequence } from "../../core/audio.js";
 import {
   answerButtons, byId, fillSelect, makeOptions, setFeedback, unlockAnswers,

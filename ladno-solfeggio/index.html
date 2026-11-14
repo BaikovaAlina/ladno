@@ -10,6 +10,20 @@
     />
     <title>Ладно. Сольфеджио — теория музыки на гитаре</title>
     <link rel="stylesheet" href="style.css" />
+    <!--
+      Тема применяется до отрисовки: если в localStorage уже тёмная, страница
+      не мигнёт светлым фоном. Полное состояние читает ui/state.js.
+    -->
+    <script>
+      try {
+        var saved = JSON.parse(localStorage.getItem("ladno.progress.v2") || "{}");
+        if (saved && saved.settings && saved.settings.theme === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (error) {
+        /* повреждённые данные — просто остаёмся на светлой теме */
+      }
+    </script>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23244f3d'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' fill='%23d9e6ae' text-anchor='middle'%3E%D0%BB%3C/text%3E%3C/svg%3E"

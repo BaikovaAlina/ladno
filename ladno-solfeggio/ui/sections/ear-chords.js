@@ -6,7 +6,7 @@
  * Статистика по типам, расшифровка прозвучавших нот.
  */
 import {
-  TRIADS, SEVENTHS, getChordType, makeChord, findVoicings,
+  TRIADS, SEVENTHS, makeChord, findVoicings,
 } from "../../core/chords.js";
 import { playChord, strum } from "../../core/audio.js";
 import { accuracy, weakChords } from "../../core/storage.js";

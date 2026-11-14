@@ -8,7 +8,7 @@ import {
   SEVENTHS, getSeventh, makeChord, inversionName, chordInversionsVoicings,
   voicingsOnString, findVoicings,
 } from "../../core/chords.js";
-import { playChord, strum } from "../../core/audio.js";
+import { strum } from "../../core/audio.js";
 import { answerButtons, byId, fillSelect, makeOptions, setFeedback, unlockAnswers } from "../dom.js";
 import { renderFretboard } from "../fretboard.js";
 import { renderChordStaff } from "../staff.js";

@@ -5,9 +5,9 @@
  * режим «30 секунд» с рекордом в localStorage.
  */
 import {
-  CHROMATIC, LAST_FRET, STRINGS, bestPosition, midiOctave, mod, prettyNote, writtenNote,
+  CHROMATIC, STRINGS, bestPosition, prettyNote, writtenNote,
 } from "../../core/notes.js";
-import { playNote } from "../../core/audio.js";
+import { playSequence } from "../../core/audio.js";
 import { byId, setFeedback } from "../dom.js";
 import { renderFretboard } from "../fretboard.js";
 import { renderStaff } from "../staff.js";
@@ -39,7 +39,7 @@ export function mount(container) {
           <h2>Как читать нотную запись</h2>
           <p>Стан — это пять линеек. Чем выше нота на стане, тем выше звук на грифе.</p>
         </div>
-        <button class="button button-dark" id="notation-play" type="button"><span>▶</span> Услышать ноту</button>
+        <button class="button button-dark" id="notation-play" type="button"><span>▶</span> Услышать пример</button>
       </div>
 
       <div class="notation-board" id="notation-staff" aria-label="Пример нот на стане"></div>
@@ -168,8 +168,10 @@ export function mount(container) {
   newQuiz();
   drawBoard();
 
+  // Играем ровно то, что нарисовано в примере: E–F–G–A. Раньше кнопка
+  // над примером озвучивала ноту из упражнения ниже — это путало.
   byId("notation-play").addEventListener("click", () => {
-    if (state.quiz) playNote(state.quiz.midi, 0.9);
+    playSequence([64, 65, 67, 69], 0.42, 0.7);
   });
   byId("notation-start").addEventListener("click", startSession);
   byId("notation-retry").addEventListener("click", startSession);

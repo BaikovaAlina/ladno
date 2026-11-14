@@ -10,8 +10,8 @@ import {
 import {
   INTERVALS, INTERVAL_FEEL, getInterval, intervalOptions, invertInterval,
 } from "../../core/chords.js";
-import { playEvents, playIntervalAudio } from "../../core/audio.js";
-import { byId, fillSelect, makeOptions, setFeedback, answerButtons, unlockAnswers, setSwitch } from "../dom.js";
+import { playIntervalAudio } from "../../core/audio.js";
+import { byId, fillSelect, makeOptions, setFeedback, answerButtons, unlockAnswers } from "../dom.js";
 import { renderFretboard } from "../fretboard.js";
 import { renderStaff } from "../staff.js";
 import { record } from "../state.js";

@@ -4,7 +4,7 @@
  */
 import {
   CHROMATIC, ROOTS, STRINGS, bestPosition, midiOctave, mod, parseNote,
-  prettyNote, rootMidi, SOLFEGE_RU, writtenNote,
+  prettyNote, SOLFEGE_RU, writtenNote,
 } from "../../core/notes.js";
 import { SCALES, getScale, scaleNames, scalePcs, scaleNoteList } from "../../core/scales.js";
 import { playNote, playSequence } from "../../core/audio.js";

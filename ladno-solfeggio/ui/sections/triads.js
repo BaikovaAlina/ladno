@@ -7,12 +7,10 @@ import {
 } from "../../core/notes.js";
 import {
   TRIADS, getTriad, makeChord, inversionName, findVoicings, chordInversionsVoicings,
-  voicingsOnString, bestVoicing,
+  voicingsOnString,
 } from "../../core/chords.js";
 import { playChord, strum } from "../../core/audio.js";
-import {
-  answerButtons, byId, fillSelect, makeOptions, setFeedback, unlockAnswers,
-} from "../dom.js";
+import { byId, fillSelect, setFeedback } from "../dom.js";
 import { renderFretboard } from "../fretboard.js";
 import { renderChordStaff } from "../staff.js";
 import { record } from "../state.js";

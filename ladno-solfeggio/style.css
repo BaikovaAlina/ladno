@@ -1001,6 +1001,9 @@ table.data .empty { color: var(--muted-2); }
   .listen-button { width: 100%; }
   .top-progress { display: none; }
   .audio-indicator span:last-child { display: none; }
+  /* «серия: 0» — это бейдж-статус, а не полоса: на телефоне он не должен
+     растягиваться на всю ширину карточки. */
+  .streak-badge, .exercise-stats { align-self: flex-start; width: max-content; }
   .toast { bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {

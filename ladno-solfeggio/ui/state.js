@@ -13,7 +13,7 @@ import {
   recordAnswer, recordChordAnswer, recordIntervalAnswer, saveProgress, shareText, statsFor,
 } from "../core/storage.js";
 import { setInstrument } from "../core/audio.js";
-import { $, $$, byId } from "./dom.js";
+import { $$, byId } from "./dom.js";
 
 /* ------------------------------------------------------------------ */
 /*  Описание разделов курса                                           */

@@ -3,12 +3,12 @@
  * Девять прогрессий, прослушивание, аккорды по долям, подсказки по мелодии,
  * 12-тактовый блюз и упражнение «собери прогрессию».
  */
-import { ROOTS, mod, parseNote, prettyNote, spellInterval } from "../../core/notes.js";
+import { ROOTS, mod, parseNote, prettyNote } from "../../core/notes.js";
 import { PROGRESSIONS, getProgression, progressionChords, progressionLabel } from "../../core/progressions.js";
 import { twelveBarBlues } from "../../core/scales.js";
 import { getSeventh, makeChord, findVoicings } from "../../core/chords.js";
 import { playEvents, playProgressionAudio } from "../../core/audio.js";
-import { byId, fillSelect, setFeedback, answerButtons, makeOptions, unlockAnswers } from "../dom.js";
+import { byId, fillSelect, setFeedback } from "../dom.js";
 import { renderFretboard } from "../fretboard.js";
 import { renderChordStaff } from "../staff.js";
 import { record } from "../state.js";
