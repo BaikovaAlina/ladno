@@ -1526,3 +1526,304 @@ select:disabled {
   font-weight: 800;
   letter-spacing: 0.08em;
 }
+
+/* Дополнения к учебнику: прогресс, тренажёры и адаптивные схемы. */
+[hidden] {
+  display: none !important;
+}
+.course-progress {
+  padding: 16px 20px;
+  color: var(--ink);
+  font-size: 12px;
+}
+.course-progress span {
+  display: block;
+  margin: 8px 0;
+  opacity: 0.7;
+}
+.progress-track {
+  height: 6px;
+  background: #dce8d8;
+  border-radius: 9px;
+  overflow: hidden;
+}
+#course-progress-fill {
+  height: 100%;
+  background: #477a5a;
+  transition: width 0.3s;
+}
+.extra-panel {
+  margin-bottom: 20px;
+}
+.extra-panel > * {
+  margin-bottom: 12px;
+}
+.extra-panel label,
+.controls label,
+.exercise label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 6px;
+}
+.extra-panel .button,
+.exercise .button,
+.panel > .button {
+  margin: 5px;
+}
+.table-scroll,
+.fret-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.fretboard svg {
+  min-width: 720px;
+  width: 100%;
+  height: auto;
+}
+.fret-click {
+  cursor: pointer;
+}
+.fret-click:hover .note-disc,
+.fret-click:focus .note-disc {
+  stroke: #477a5a;
+  stroke-width: 3;
+}
+.table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 540px;
+}
+td,
+th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--line, #dce6d7);
+}
+.chips,
+.stats-row,
+.blues-bars {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.chip-toggle,
+.drum-pad {
+  border: 1px solid #bdceb9;
+  border-radius: 8px;
+  background: var(--white, #fff);
+  color: var(--ink, #314b3a);
+  padding: 10px;
+  cursor: pointer;
+}
+.chip-toggle.active,
+.drum-pad.active {
+  background: #376b53;
+  color: white;
+}
+.stats-row span,
+.bar-badge {
+  background: var(--soft, #f3f7ed);
+  padding: 10px;
+  border-radius: 8px;
+}
+.bar-badge {
+  display: flex;
+  flex-direction: column;
+  min-width: 60px;
+}
+.blues-bar-slot {
+  flex: 1 0 20%;
+}
+.blues-bar-slot select {
+  width: 100%;
+}
+.staff svg {
+  max-width: 700px;
+  width: 100%;
+  height: auto;
+}
+.beat-ruler {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.beat-cell,
+.tap-slot {
+  flex: 1 0 48px;
+  padding: 12px 8px;
+  background: var(--soft, #f3f7ed);
+  text-align: center;
+  border-radius: 8px;
+}
+.beat-cell span,
+.tap-slot small,
+.tap-slot strong {
+  display: block;
+}
+.beat-cell.playing,
+.tap-slot.expected {
+  background: #c9ddb5;
+  color: #274a32;
+}
+.beat-role {
+  font-size: 9px;
+}
+.drum-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.drum-label {
+  width: 110px;
+  font-size: 12px;
+}
+.drum-steps {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+}
+.drum-pad {
+  padding: 5px;
+  min-height: 38px;
+}
+.saved-motif-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #ccd9c8;
+  padding: 12px 0;
+}
+.saved-motif-item small {
+  display: block;
+}
+.toast-banner {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  background: #294b38;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  z-index: 99;
+  transition: 0.2s;
+  pointer-events: none;
+}
+.toast-banner.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.wave-success {
+  animation: good-wave 0.65s;
+}
+.wave-error {
+  animation: bad-wave 0.65s;
+}
+@keyframes good-wave {
+  50% {
+    box-shadow: 0 0 0 8px #76bd7770;
+  }
+}
+@keyframes bad-wave {
+  50% {
+    box-shadow: 0 0 0 8px #dd796970;
+  }
+}
+.view-enter {
+  animation: view-in 0.25s ease-out;
+}
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e1ebdb;
+  --muted: #a6b8a4;
+  --white: #26382d;
+  --soft: #314638;
+  --line: #506650;
+  --green: #a2c99c;
+  --staff-ink: #e1ebdb;
+  --staff-line: #93a18e;
+  --fb-wood: #384b3b;
+  --fb-wood-border: #617361;
+  --fb-idle-fill: #344337;
+  --fb-idle-text: #c0d1bf;
+}
+[data-theme="dark"] body {
+  background: #1c2921;
+  color: #e1ebdb;
+}
+[data-theme="dark"] .sidebar,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .exercise,
+[data-theme="dark"] .lesson-card,
+[data-theme="dark"] .topbar {
+  background: #26382d;
+  color: #e1ebdb;
+}
+@media (max-width: 700px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .topbar-right {
+    flex-wrap: wrap;
+  }
+  .answer,
+  .button,
+  .switch button {
+    min-height: 44px;
+  }
+  .blues-bar-slot {
+    flex-basis: 40%;
+  }
+}
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: #e1ebdb;
+}
+[data-theme="dark"] h1 em {
+  color: #afd2aa;
+}
+[data-theme="dark"] .intro-main > p,
+[data-theme="dark"] .lesson-card p,
+[data-theme="dark"] .reference p,
+[data-theme="dark"] .reference-copy,
+[data-theme="dark"] .breadcrumbs {
+  color: #c2d0bf;
+}
+[data-theme="dark"] .lesson-card p strong {
+  color: #d7e7d3;
+}
+[data-theme="dark"] .eyebrow,
+[data-theme="dark"] .overline {
+  color: #b3c9aa;
+}
+@media (max-width: 800px) {
+  .topbar {
+    height: auto;
+    min-height: 52px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .topbar-right {
+    gap: 6px;
+  }
+  .topbar-right .button {
+    font-size: 11px;
+    padding: 8px;
+  }
+  .navigation {
+    -webkit-overflow-scrolling: touch;
+  }
+}
