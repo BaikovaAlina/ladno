@@ -1,0 +1,13 @@
+{
+  "name": "ladno-piano-course",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Интерактивный курс фортепиано для начинающих и продолжающих",
+  "scripts": {
+    "start": "node server.js",
+    "telegram:link": "node scripts/link-telegram.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
