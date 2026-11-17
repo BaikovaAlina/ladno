@@ -381,7 +381,7 @@
   }
 
   // Автоматическое определение Chat ID через getUpdates
-  async function autoDetectTelegramChatId() {
+  async function autoDetectTelegramChatId(silent = false) {
     const statusMsg = document.getElementById("tg-status-message");
     if (statusMsg) statusMsg.textContent = "Поиск входящих сообщений в боте...";
 
@@ -396,17 +396,28 @@
       const updates = data.result || [];
       if (!updates.length) {
         if (statusMsg) {
-          statusMsg.textContent = "Сообщений не найдено. Нажмите «Открыть бота», напишите ему /start и попробуйте снова!";
+          statusMsg.textContent = "Сообщений не найдено. Напишите боту /start и нажмите «Определить ID» ещё раз!";
         }
-        alert("В боте пока нет сообщений. Откройте бота, отправьте ему /start, а затем нажмите 'Определить ID' ещё раз!");
+        if (!silent) {
+          alert("В боте пока нет сообщений. Откройте бота, отправьте ему /start, а затем нажмите 'Определить ID' ещё раз!");
+        }
         return;
       }
 
-      const lastUpdate = updates[updates.length - 1];
-      const msg = lastUpdate.message || lastUpdate.edited_message || lastUpdate.callback_query?.message;
-      if (msg && msg.chat && msg.chat.id) {
-        const detectedId = String(msg.chat.id);
-        const userName = msg.from?.first_name || "музыкант";
+      // Берём последнее сообщение от пользователя
+      let targetMsg = null;
+      for (let i = updates.length - 1; i >= 0; i--) {
+        const u = updates[i];
+        const m = u.message || u.edited_message || u.callback_query?.message;
+        if (m && m.chat && m.chat.id) {
+          targetMsg = m;
+          break;
+        }
+      }
+
+      if (targetMsg) {
+        const detectedId = String(targetMsg.chat.id);
+        const userName = targetMsg.from?.first_name || "музыкант";
         tgSettings.chatId = detectedId;
         const input = document.getElementById("tg-chat-id-input");
         if (input) input.value = detectedId;
@@ -414,7 +425,7 @@
         updateTelegramStatusUI();
 
         if (statusMsg) {
-          statusMsg.textContent = `Успешно! Найден чат с ${userName} (ID: ${detectedId})`;
+          statusMsg.textContent = `Успешно! Подключен чат с ${userName} (ID: ${detectedId})`;
         }
 
         await sendTelegramMessage(
@@ -427,8 +438,12 @@
           `• Итоговую сводку тренировки\n\n` +
           `<i>Приятной и вдохновляющей практики за клавишами! ✨</i>`
         );
+
+        if (!silent) {
+          alert(`✅ Чат с ${userName} (ID: ${detectedId}) успешно подключен! Проверьте Telegram — бот уже отправил приветствие!`);
+        }
       } else {
-        if (statusMsg) statusMsg.textContent = "Не удалось извлечь ID из последнего сообщения.";
+        if (statusMsg) statusMsg.textContent = "Не удалось извлечь ID из сообщений.";
       }
     } catch (e) {
       if (statusMsg) statusMsg.textContent = "Ошибка сети: " + e.message;
@@ -2098,6 +2113,9 @@
       renderGrandStaffSvg("freelab-staff-display", [60]);
     } else if (name === "telegram") {
       renderTelegramLog();
+      if (!tgSettings.chatId) {
+        autoDetectTelegramChatId(true);
+      }
     }
   }
 
@@ -2249,6 +2267,11 @@
     updateTelegramStatusUI();
     populateSelects();
     fetchBotInfo();
+
+    // Автоматическое определение Chat ID в фоне при наличии входящих сообщений
+    if (!tgSettings.chatId) {
+      setTimeout(() => autoDetectTelegramChatId(true), 600);
+    }
 
     renderPianoKeyboard("notes-piano", {
       startMidi: 48,
