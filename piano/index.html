@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f5ed" />
+    <meta
+      name="description"
+      content="Ладно — понятный интерактивный курс фортепиано: чтение нот, слух, аккорды, ритм и музыкальная память."
+    />
+    <title>Ладно — фортепиано с нуля</title>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Навигация по курсу">
+        <a class="brand" href="#home" aria-label="Ладно — в начало курса">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40">
+              <path d="M8 9h24v22H8z" />
+              <path d="M14 9v13m6-13v13m6-13v13" />
+              <path d="M11 9h6v11h-6zm12 0h6v11h-6z" class="black-keys" />
+              <path d="M12 27h16" class="brand-line" />
+            </svg>
+          </span>
+          <span><strong>ладно<span class="brand-dot">.</span></strong><small>фортепиано и музыка</small></span>
+        </a>
+
+        <div class="sidebar-label">ТВОЙ УЧЕБНИК <span>01 — 07</span></div>
+        <nav class="navigation" aria-label="Разделы курса">
+          <a href="#home" data-nav="home"><span class="nav-no">01</span><span>Мой курс</span><span class="nav-arrow">↗</span></a>
+          <a href="#reading" data-nav="reading"><span class="nav-no">02</span><span>Ноты с листа</span><span class="nav-arrow">↗</span></a>
+          <a href="#ear" data-nav="ear"><span class="nav-no">03</span><span>Тренировка слуха</span><span class="nav-arrow">↗</span></a>
+          <a href="#chords" data-nav="chords"><span class="nav-no">04</span><span>Аккорды</span><span class="nav-arrow">↗</span></a>
+          <a href="#rhythm" data-nav="rhythm"><span class="nav-no">05</span><span>Ритм и пульс</span><span class="nav-arrow">↗</span></a>
+          <a href="#memory" data-nav="memory"><span class="nav-no">06</span><span>Музыкальная память</span><span class="nav-arrow">↗</span></a>
+          <a href="#course" data-nav="course"><span class="nav-no">07</span><span>Все уроки</span><span class="nav-arrow">↗</span></a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="sidebar-tip">
+            <span class="tip-icon">✳</span>
+            <div><strong>Маленькими шагами.</strong><p>Пять спокойных минут лучше редкой долгой практики.</p></div>
+          </div>
+          <button class="telegram-link" id="open-telegram-settings" type="button">
+            <span aria-hidden="true">↗</span><span>Уведомления в Telegram</span>
+          </button>
+          <div class="sidebar-foot">СДЕЛАНО ДЛЯ ТЕХ,<br />КТО ТОЛЬКО НАЧИНАЕТ <span>♡</span></div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="breadcrumbs"><span>САМОУЧИТЕЛЬ</span><i>/</i><span id="breadcrumb">Мой курс</span></div>
+          <div class="topbar-right">
+            <span class="audio-indicator"><span class="sound-wave" aria-hidden="true">◖))</span><span id="audio-status">Звук готов</span></span>
+            <span class="top-progress" title="Серия правильных ответов"><span>✦</span><b id="top-streak">0</b><span class="progress-word">подряд</span></span>
+            <label class="level-picker">УРОВЕНЬ
+              <select id="level-select" aria-label="Выбрать сложность">
+                <option value="beginner">Начинаю</option>
+                <option value="intermediate">Уверенно</option>
+                <option value="advanced">Продвинутый</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="page">
+          <header class="page-intro">
+            <div class="intro-main">
+              <div class="eyebrow"><span class="eyebrow-dot"></span><span id="intro-eyebrow">01 / САМОЕ НАЧАЛО</span></div>
+              <h1 id="intro-title">Музыка начинается<br /><em>с одной ноты.</em></h1>
+              <p id="intro-text">Познакомимся с клавиатурой, научимся читать ноты и слушать музыку. Всё по порядку, без спешки и сложных слов.</p>
+            </div>
+            <div class="intro-stamp" aria-hidden="true">
+              <div class="stamp-top">УЧИСЬ В СВОЁМ ТЕМПЕ <span>↗</span></div>
+              <div class="stamp-art"><span>♫</span><div><b id="intro-number">01</b><small>/ 07</small></div></div>
+              <div class="stamp-bottom">ТЕОРИЯ + ПРАКТИКА</div>
+            </div>
+          </header>
+
+          <section class="view" id="view-home" aria-labelledby="intro-title">
+            <div class="welcome-card">
+              <div class="welcome-copy">
+                <span class="overline"><span class="tiny-dot"></span>ТВОЯ МУЗЫКАЛЬНАЯ ДОРОЖКА</span>
+                <h2>Не нужно уметь играть,<br /><em>чтобы начать.</em></h2>
+                <p>Клавиши, ноты, слух, аккорды и ритм — от первого знакомства до уверенной самостоятельной игры. Иди в своём темпе.</p>
+                <button class="button button-dark" id="continue-course" type="button">Продолжить курс <span>↗</span></button>
+              </div>
+              <div class="welcome-art" aria-hidden="true">
+                <div class="music-orbit orbit-one"></div><div class="music-orbit orbit-two"></div>
+                <span class="welcome-note note-one">♪</span><span class="welcome-note note-two">♫</span>
+                <div class="mini-piano"><i></i><i></i><i></i><i></i><i></i><b></b><b></b><b></b></div>
+                <span class="welcome-spark">✳</span>
+              </div>
+            </div>
+
+            <div class="stat-grid" aria-label="Твоя статистика">
+              <article class="stat-card"><span>УПРАЖНЕНИЙ</span><strong id="stat-total">0</strong><small>попыток всего</small></article>
+              <article class="stat-card"><span>ВЕРНЫХ ОТВЕТОВ</span><strong id="stat-correct">0</strong><small id="stat-accuracy">пока без ошибок</small></article>
+              <article class="stat-card"><span>УРОКОВ ПРОЙДЕНО</span><strong id="stat-lessons">0</strong><small>из 8 шагов курса</small></article>
+              <article class="stat-card stat-highlight"><span>ЛУЧШАЯ СЕРИЯ</span><strong><span id="stat-best">0</span> <i>✦</i></strong><small>верных ответов подряд</small></article>
+            </div>
+
+            <div class="section-title">
+              <div><div class="overline">ТВОЙ СЛЕДУЮЩИЙ ШАГ</div><h2 id="next-step-title">Начнём с клавиатуры <em>и звука.</em></h2></div>
+              <span class="reading-time">ПРОГРЕСС <b id="progress-label">0%</b></span>
+            </div>
+            <div class="progress-card">
+              <div class="progress-track"><span id="course-progress-bar"></span></div>
+              <p id="course-progress-copy">Каждый законченный урок и упражнение приближают к цели.</p>
+            </div>
+
+            <div class="section-title compact-title">
+              <div><div class="overline">ПРАКТИКА НА СЕГОДНЯ</div><h2>Выбери, с чего <em>поиграем.</em></h2></div>
+              <a class="text-link" href="#course">Весь курс <span>↗</span></a>
+            </div>
+            <div class="practice-grid">
+              <a class="practice-card" href="#reading"><span class="practice-icon">♬</span><b>Прочитать ноты</b><small>Тренируй музыкальный взгляд</small><span class="practice-arrow">↗</span></a>
+              <a class="practice-card" href="#ear"><span class="practice-icon">◖))</span><b>Послушать интервалы</b><small>Узнавай музыку на слух</small><span class="practice-arrow">↗</span></a>
+              <a class="practice-card" href="#rhythm"><span class="practice-icon">♩</span><b>Поймать ритм</b><small>Чувствуй устойчивый пульс</small><span class="practice-arrow">↗</span></a>
+            </div>
+
+            <div class="section-title compact-title">
+              <div><div class="overline">КУРС ОТ А ДО Я</div><h2>Восемь понятных <em>ступеней.</em></h2></div>
+              <span class="reading-time">НАЧИНАЮЩИЙ → ПРОДВИНУТЫЙ</span>
+            </div>
+            <div class="module-grid" id="home-lesson-grid"></div>
+
+            <div class="closing-card">
+              <span class="closing-symbol">✳</span>
+              <div><h2>Не идеально — <em>а регулярно.</em></h2><p>Нажми на клавишу, послушай и попробуй ещё раз. Так и начинается навык.</p></div>
+              <button class="button button-light" id="home-telegram-link" type="button">Настроить Telegram <span>↗</span></button>
+            </div>
+          </section>
+
+          <section class="view" id="view-reading" aria-labelledby="intro-title" hidden>
+            <div class="panel exercise-panel">
+              <div class="panel-heading">
+                <div><div class="overline"><span class="tiny-dot"></span>ЧИТАЕМ И СРАЗУ ИГРАЕМ</div><h2>Найди ноту на клавиатуре</h2><p>Посмотри на нотный стан и нажми соответствующую клавишу.</p></div>
+                <div class="segmented" role="group" aria-label="Режим чтения нот"><button type="button" data-reading-mode="note" class="active" aria-pressed="true">Одна нота</button><button type="button" data-reading-mode="phrase" aria-pressed="false">Мелодия</button></div>
+              </div>
+              <div class="reading-toolbar"><span class="task-pill" id="reading-level-label">СКРИПИЧЕСКИЙ КЛЮЧ · ДО МАЖОР</span><div class="toolbar-actions"><button class="button button-ghost button-small" id="reading-clear" type="button">Сбросить ответ</button><button class="button button-ghost button-small" id="reading-new" type="button">Новое задание <span>↻</span></button></div></div>
+              <div class="staff-wrap"><div id="reading-staff" class="staff-view" role="img" aria-label="Ноты на нотном стане"></div></div>
+              <p class="task-prompt" id="reading-prompt">Выбери ноту на клавиатуре ниже.</p>
+              <div class="piano-scroll"><div class="piano-keys" id="reading-keyboard" aria-label="Виртуальное фортепиано от до четвертой до си пятой октавы"></div></div>
+              <div class="keyboard-hint"><span>Клавиши компьютера: <kbd>A</kbd>–<kbd>;</kbd></span><span>Поддерживается MIDI-клавиатура в Chrome / Edge</span></div>
+              <div class="exercise-footer"><p class="feedback" id="reading-feedback" aria-live="polite">Здесь появится подсказка после ответа.</p><button class="button button-dark" id="reading-check" type="button" disabled>Проверить <span>↗</span></button></div>
+            </div>
+
+            <div class="section-title"><div><div class="overline">НЕБОЛЬШАЯ ПОДСКАЗКА</div><h2>Как устроен <em>скрипичный ключ.</em></h2></div><span class="reading-time">СНАЧАЛА — ПЯТЬ ЛИНИЙ</span></div>
+            <div class="theory-grid three">
+              <article class="lesson-card"><span class="card-no">01 <span>↗</span></span><h3>Пять линий</h3><p>Снизу вверх линии скрипичного ключа: <strong>ми — соль — си — ре — фа</strong>. Запомни фразу «Ми Соль Си Ре Фа» или придумай свою.</p><div class="card-example">E · G · B · D · F <span>линии снизу вверх</span></div></article>
+              <article class="lesson-card"><span class="card-no">02 <span>↗</span></span><h3>Промежутки</h3><p>Между линиями живут ноты <strong>фа — ля — до — ми</strong>. Идём снизу вверх — получаем F, A, C, E. До легко узнать: она на добавочной линии снизу.</p><div class="card-example">F · A · C · E <span>между линиями</span></div></article>
+              <article class="lesson-card"><span class="card-no">03 <span>↗</span></span><h3>Ищи клавишу До</h3><p>Чёрные клавиши собраны по две и по три. До — белая клавиша прямо перед группой из двух чёрных. Этот рисунок повторяется по всей клавиатуре.</p><div class="card-example">2 чёрные → До слева <span>повторяется в каждой октаве</span></div></article>
+            </div>
+          </section>
+
+          <section class="view" id="view-ear" aria-labelledby="intro-title" hidden>
+            <div class="panel exercise-panel">
+              <div class="panel-heading">
+                <div><div class="overline"><span class="tiny-dot"></span>СЛУШАЙ, НЕ УГАДЫВАЙ</div><h2>Узнай, что ты услышала</h2><p>Сначала послушай пример. Можно включить его ещё раз — спешить не нужно.</p></div>
+                <label class="control-label">Тренируем
+                  <select id="ear-mode"><option value="interval">Интервалы</option><option value="chord">Аккорды</option><option value="pitch">Отдельные ноты</option></select>
+                </label>
+              </div>
+              <div class="ear-stage">
+                <div class="ear-record" aria-hidden="true"><span>♫</span><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <span class="task-pill" id="ear-category">СЛУХОВОЕ УПРАЖНЕНИЕ</span>
+                <h3 id="ear-prompt">Нажми «Послушать» и выбери ответ.</h3>
+                <div class="ear-actions"><button class="button button-dark" id="ear-play" type="button"><span>▶</span> Послушать</button><button class="button button-ghost" id="ear-next" type="button">Следующий вопрос <span>↻</span></button></div>
+              </div>
+              <div class="answer-grid" id="ear-options" aria-label="Варианты ответа"></div>
+              <p class="feedback feedback-center" id="ear-feedback" aria-live="polite">Совет: напой услышанное, прежде чем выбирать.</p>
+            </div>
+
+            <div class="section-title"><div><div class="overline">УШИ ТОЖЕ ТРЕНИРУЮТСЯ</div><h2>Слушай отношения, <em>не только ноты.</em></h2></div><span class="reading-time">ПО МИНУТЕ КАЖДЫЙ ДЕНЬ</span></div>
+            <div class="theory-grid three">
+              <article class="lesson-card"><span class="card-no">01 <span>↗</span></span><h3>Поймай расстояние</h3><p>Интервал — это расстояние между двумя звуками. Малая терция часто звучит задумчиво, большая — светло, а чистая квинта — широко и устойчиво.</p><div class="card-example">2 ноты → интервал <span>слушай вверх и вниз</span></div></article>
+              <article class="lesson-card"><span class="card-no">02 <span>↗</span></span><h3>Узнай окраску</h3><p>У мажорного трезвучия в основании большая терция, у минорного — малая. Не нужно заучивать «грустно» или «весело»: ищи знакомое ощущение и проверяй.</p><div class="card-example">4 + 3 / 3 + 4 <span>полутона в трезвучии</span></div></article>
+              <article class="lesson-card"><span class="card-no">03 <span>↗</span></span><h3>Повтори голосом</h3><p>После прослушивания тихонько напой ноты. Голос помогает мозгу связать высоту, направление и название. Это отличный мост между слухом и клавиатурой.</p><div class="card-example">послушай → напой → ответь <span>можно без идеального голоса</span></div></article>
+            </div>
+          </section>
+
+          <section class="view" id="view-chords" aria-labelledby="intro-title" hidden>
+            <div class="panel exercise-panel">
+              <div class="panel-heading">
+                <div><div class="overline"><span class="tiny-dot"></span>СОБЕРИ ЗВУКИ ВМЕСТЕ</div><h2>Построй аккорд на клавишах</h2><p>Нажми нужные клавиши, чтобы собрать аккорд. Порядок не важен.</p></div>
+                <button class="button button-ghost button-small" id="chord-next" type="button">Новый аккорд <span>↻</span></button>
+              </div>
+              <div class="chord-challenge">
+                <div><span class="task-pill">ТВОЁ ЗАДАНИЕ</span><h3 id="chord-target">Собери аккорд C major</h3><p id="chord-hint">Подсказка: начни с белых клавиш C, E и G.</p></div>
+                <button class="play-chord-button" id="chord-play" type="button" aria-label="Послушать готовый аккорд"><span>▶</span><small>Послушать</small></button>
+              </div>
+              <div class="piano-scroll"><div class="piano-keys" id="chord-keyboard" aria-label="Виртуальное фортепиано для построения аккорда"></div></div>
+              <div class="picked-row"><span>ВЫБРАНО</span><strong id="chord-picked">пока ничего</strong><button class="clear-link" id="chord-clear" type="button">Сбросить</button></div>
+              <div class="exercise-footer"><p class="feedback" id="chord-feedback" aria-live="polite">Прослушай пример или попробуй собрать аккорд сама.</p><button class="button button-dark" id="chord-check" type="button">Проверить <span>↗</span></button></div>
+            </div>
+
+            <div class="section-title"><div><div class="overline">ПЕРВЫЙ ШАГ К ГАРМОНИИ</div><h2>Аккорд — это <em>несколько нот вместе.</em></h2></div><span class="reading-time">3 ИЛИ 4 ЗВУКА</span></div>
+            <div class="theory-grid three">
+              <article class="lesson-card"><span class="card-no">01 <span>↗</span></span><h3>Мажорное трезвучие</h3><p>Сложи первую, третью и пятую ступени гаммы. Между первой и третьей — четыре полутона, между третьей и пятой — три. Например, C–E–G.</p><div class="card-example">4 + 3 полутона <span>мажор</span></div></article>
+              <article class="lesson-card"><span class="card-no">02 <span>↗</span></span><h3>Минорное трезвучие</h3><p>Те же три ступени, но порядок расстояний меняется: сначала три полутона, затем четыре. В C minor получаются C–E♭–G.</p><div class="card-example">3 + 4 полутона <span>минор</span></div></article>
+              <article class="lesson-card"><span class="card-no">03 <span>↗</span></span><h3>Обращения</h3><p>Если перенести нижнюю ноту на октаву вверх, аккорд не изменится — только его порядок. Так появляются обращения и удобные переходы между аккордами.</p><div class="card-example">C–E–G → E–G–C <span>те же ноты, новый бас</span></div></article>
+            </div>
+          </section>
+
+          <section class="view" id="view-rhythm" aria-labelledby="intro-title" hidden>
+            <div class="panel exercise-panel">
+              <div class="panel-heading">
+                <div><div class="overline"><span class="tiny-dot"></span>ПОЧУВСТВУЙ РОВНОЕ ДВИЖЕНИЕ</div><h2>Повтори ритмический рисунок</h2><p>Послушай ритм, затем повтори его кнопкой, хлопком или клавишей пробела.</p></div>
+                <label class="control-label">Темп
+                  <select id="rhythm-tempo"><option value="60">Спокойно · 60</option><option value="76" selected>Удобно · 76</option><option value="92">Бодро · 92</option><option value="108">Быстро · 108</option></select>
+                </label>
+              </div>
+              <div class="rhythm-topline"><span class="task-pill" id="rhythm-pattern-label">4/4 · ОДИН ТАКТ</span><button class="button button-ghost button-small" id="rhythm-new" type="button">Новый рисунок <span>↻</span></button><span class="rhythm-count" id="rhythm-count">Готова?</span></div>
+              <div class="rhythm-grid" id="rhythm-grid" aria-label="Сетка восьмых долей"></div>
+              <div class="rhythm-instructions"><span class="rhythm-step">01 <b>Слушай</b><small>Запомни рисунок</small></span><span class="rhythm-line"></span><span class="rhythm-step">02 <b>Повтори</b><small>В такт метронома</small></span><span class="rhythm-line"></span><span class="rhythm-step">03 <b>Проверь</b><small>Посмотри точность</small></span></div>
+              <div class="rhythm-actions"><button class="button button-ghost" id="rhythm-listen" type="button"><span>▶</span> Послушать пример</button><button class="button button-dark" id="rhythm-start" type="button">Мой ход <span>↗</span></button><button class="button button-ghost" id="rhythm-tap" type="button" disabled>Тап! <kbd>ПРОБЕЛ</kbd></button></div>
+              <p class="feedback feedback-center" id="rhythm-feedback" aria-live="polite">Слушай, где звук, а где пауза. Начни с простого.</p>
+            </div>
+
+            <div class="section-title"><div><div class="overline">МУЗЫКАЛЬНОЕ ВРЕМЯ</div><h2>Ритм можно <em>понять и почувствовать.</em></h2></div><span class="reading-time">СЧИТАЙ: РАЗ И ДВА И</span></div>
+            <div class="theory-grid three">
+              <article class="lesson-card"><span class="card-no">01 <span>↗</span></span><h3>Пульс и такт</h3><p>Пульс — ровное «сердцебиение» музыки. Такт группирует доли; размер 4/4 значит, что в каждом такте четыре четвертные доли.</p><div class="card-example">РАЗ · два · три · четыре <span>сильная первая доля</span></div></article>
+              <article class="lesson-card"><span class="card-no">02 <span>↗</span></span><h3>Длительности</h3><p>Четверть занимает одну долю, две восьмые делят её пополам. Половинная длится две доли, целая — четыре. Пауза тоже занимает время.</p><div class="card-example">♩ = ♪♪ <span>одна доля</span></div></article>
+              <article class="lesson-card"><span class="card-no">03 <span>↗</span></span><h3>Считай вслух</h3><p>Произнеси «раз-и-два-и», отбивая ладонью доли, а пальцами — промежуточные восьмые. Так проще не ускоряться в трудном месте.</p><div class="card-example">1 и 2 и 3 и 4 и <span>восемь ровных шагов</span></div></article>
+            </div>
+          </section>
+
+          <section class="view" id="view-memory" aria-labelledby="intro-title" hidden>
+            <div class="panel exercise-panel">
+              <div class="panel-heading">
+                <div><div class="overline"><span class="tiny-dot"></span>ПОСЛУШАЙ И ПОВТОРИ</div><h2>Запомни короткую мелодию</h2><p>Послушай последовательность звуков, а затем сыграй её на клавиатуре в том же порядке.</p></div>
+                <span class="task-pill" id="memory-level">3 НОТЫ</span>
+              </div>
+              <div class="memory-stage">
+                <div class="memory-motif" aria-hidden="true"><span>♪</span><span>♫</span><span>♪</span><span>♬</span><span>♪</span></div>
+                <p id="memory-prompt">Нажми «Послушать последовательность», чтобы начать.</p>
+                <div class="memory-actions"><button class="button button-dark" id="memory-play" type="button"><span>▶</span> Послушать последовательность</button><button class="button button-ghost" id="memory-new" type="button">Новая мелодия <span>↻</span></button></div>
+                <div class="memory-slots" id="memory-slots" aria-label="Введённые ноты"></div>
+              </div>
+              <div class="piano-scroll"><div class="piano-keys" id="memory-keyboard" aria-label="Виртуальное фортепиано для повторения мелодии"></div></div>
+              <div class="keyboard-hint"><span>Нажимай клавиши по порядку, не одновременно.</span><span>Можно послушать ещё раз.</span></div>
+              <div class="exercise-footer"><p class="feedback" id="memory-feedback" aria-live="polite">Все ноты прозвучат по очереди.</p><button class="button button-ghost" id="memory-clear" type="button">Начать ответ заново <span>↻</span></button></div>
+            </div>
+
+            <div class="section-title"><div><div class="overline">ПАМЯТЬ — ЭТО НАВЫК</div><h2>Слушай, удерживай, <em>воспроизводи.</em></h2></div><span class="reading-time">НАЧНИ С ТРЁХ НОТ</span></div>
+            <div class="theory-grid three">
+              <article class="lesson-card"><span class="card-no">01 <span>↗</span></span><h3>Делай паузу</h3><p>После прослушивания не торопись. Представь движение мелодии: ноты пошли вверх, вниз или повторились? Иногда эта картина помогает больше, чем попытка запомнить всё сразу.</p><div class="card-example">услышь → представь → сыграй <span>можно слушать снова</span></div></article>
+              <article class="lesson-card"><span class="card-no">02 <span>↗</span></span><h3>Группируй звуки</h3><p>Не держи каждую ноту отдельно. Объедини их в короткий рисунок из двух-трёх звуков, как слова складываются в фразу.</p><div class="card-example">до–ми · ре–соль <span>маленькие группы</span></div></article>
+              <article class="lesson-card"><span class="card-no">03 <span>↗</span></span><h3>Усложняй постепенно</h3><p>Начинай с трёх звуков. Когда получается спокойно — добавь ноту. Ошибка не обнуляет навык: она показывает, где мелодии нужно ещё немного внимания.</p><div class="card-example">3 → 4 → 5 нот <span>без спешки</span></div></article>
+            </div>
+          </section>
+
+          <section class="view" id="view-course" aria-labelledby="intro-title" hidden>
+            <div class="course-note"><span>✳</span><p>Курс выстроен от первых клавиш до самостоятельного чтения, гармонии и музыкальной выразительности. Можно изучать темы в любом порядке — прогресс сохранится на этом устройстве.</p></div>
+            <div class="course-layout">
+              <div class="module-grid course-grid" id="course-lesson-grid"></div>
+              <article class="panel lesson-detail" id="lesson-detail" aria-live="polite"><div class="empty-lesson"><span>♫</span><h2>Выбери урок слева</h2><p>Короткое объяснение, пример и упражнение ждут внутри каждого шага.</p></div></article>
+            </div>
+          </section>
+
+          <footer class="footer">
+            <div><b>ладно<span>.</span></b><span>МУЗЫКА ПОНЯТНЫМ ЯЗЫКОМ</span></div>
+            <div id="storage-status">Прогресс хранится в этом браузере</div>
+            <button id="reset-progress" type="button">Сбросить прогресс</button>
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="telegram-dialog" id="telegram-dialog" aria-labelledby="telegram-title">
+      <form method="dialog" class="dialog-close-row"><button class="dialog-close" aria-label="Закрыть окно">×</button></form>
+      <span class="overline"><span class="tiny-dot"></span>НАПОМИНАНИЯ ДЛЯ ТЕБЯ</span>
+      <h2 id="telegram-title">Практика в Telegram</h2>
+      <p class="dialog-intro">Бот может присылать короткое сообщение после каждого проверенного упражнения: что получилось и где была ошибка. Токен хранится только на сервере — не вставляй его в браузер.</p>
+      <div class="telegram-status-box" id="telegram-status" role="status">Проверяем подключение к серверу…</div>
+      <form id="telegram-login-form" class="telegram-login-form" hidden>
+        <label for="telegram-password">Пароль доступа к личному серверу</label>
+        <input id="telegram-password" type="password" autocomplete="current-password" placeholder="Пароль из настроек сервера" />
+        <button class="button button-dark" type="submit">Войти и подключить <span>↗</span></button>
+      </form>
+      <label class="telegram-toggle-row" id="telegram-toggle-row" hidden><span><b>Отправлять отчёты об упражнениях</b><small>Можно выключить в любой момент</small></span><input id="telegram-enabled" type="checkbox" /></label>
+      <div class="dialog-help"><b>Сначала настрой сервер</b><p>Инструкция, безопасная привязка бота и запуск находятся в <code>piano/README.md</code>. На статическом GitHub Pages уведомления не отправляются — нужен Node.js-сервер.</p></div>
+      <p class="privacy-note">Сами ответы и прогресс остаются в браузере. В Telegram уходит только название упражнения, верно/ошибка и краткая подсказка.</p>
+    </dialog>
+
+    <noscript><div class="noscript">Для интерактивных клавиш и упражнений включи JavaScript в браузере.</div></noscript>
+  </body>
+</html>
