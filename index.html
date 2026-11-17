@@ -720,30 +720,56 @@
               </article>
             </div>
 
-            <!-- Упражнение 04: Аккорды -->
+            <!-- Упражнение 04: Запоминание аккордов -->
             <div class="exercise" id="chords-exercise">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
                     <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 04
                   </div>
-                  <h2>Тренажёр аккордов на слух</h2>
-                  <p>Определи наклонение прозвучавшего аккорда: мажор, минор, уменьшенный или увеличенный.</p>
+                  <h2>Тренажёр запоминания аккордов</h2>
+                  <p>Три режима практики: построй аккорд на клавишах, выучи состав по нотам или определи на слух.</p>
                 </div>
                 <span class="exercise-stats" id="chords-stats">Серия: 0 • Ошибок: 0</span>
               </div>
 
-              <div style="margin: 16px 0;">
-                <button class="button button-accent" id="chords-repeat-btn" type="button">
-                  ▶ Послушать аккорд снова
-                </button>
+              <!-- Переключатель режима тренировки аккордов -->
+              <div class="switch" role="group" aria-label="Режим тренировки аккордов" style="margin: 14px 0 10px;">
+                <button type="button" class="active" data-chord-quiz-mode="build" aria-pressed="true">Собери на клавишах 🎹</button>
+                <button type="button" data-chord-quiz-mode="spelling" aria-pressed="false">Нотный состав 𝅘𝅥𝅮</button>
+                <button type="button" data-chord-quiz-mode="ear" aria-pressed="false">На слух 👂</button>
+              </div>
+
+              <!-- Режим 1: Сборка аккорда на клавиатуре -->
+              <div id="chord-quiz-build-box">
+                <div class="quiz-status" id="chord-quiz-build-prompt">
+                  Задание: Собери аккорд C (До мажор) — нажми 3 клавиши (C - E - G)
+                </div>
+                <div class="exercise-piano-area">
+                  <div class="piano-scroll">
+                    <div class="piano-keyboard" id="chord-quiz-piano" aria-label="Клавиатура построения аккордов"></div>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                  <span id="chord-build-selected-notes" style="font-size:12px; font-weight:700; color:#355a40;">Нажато нот: 0 из 3</span>
+                  <button class="button button-ghost" id="chord-build-reset-btn" type="button" style="font-size:11px; padding:5px 10px;">Сбросить клавиши</button>
+                </div>
+              </div>
+
+              <!-- Режим 2 и 3: Повторное прослушивание -->
+              <div id="chord-quiz-other-box" style="display:none;">
+                <div style="margin: 12px 0;">
+                  <button class="button button-accent" id="chords-repeat-btn" type="button">
+                    ▶ Послушать аккорд снова
+                  </button>
+                </div>
               </div>
 
               <div class="exercise-bottom">
-                <div>
-                  <div class="field-caption">ВЫБЕРИ ТИП АККОРДА</div>
+                <div style="flex:1;">
+                  <div class="field-caption" id="chords-answers-caption">ИЛИ ВЫБЕРИ ВАРИАНТ ОТВЕТА</div>
                   <div class="answer-row" id="chords-answers"></div>
-                  <p class="feedback" id="chords-feedback" aria-live="polite">Выбери один из вариантов.</p>
+                  <p class="feedback" id="chords-feedback" aria-live="polite">Выбери 3 клавиши на клавиатуре выше.</p>
                 </div>
                 <button class="button button-ghost" id="chords-next-btn" type="button">
                   Следующий аккорд <span>↗</span>
@@ -1152,27 +1178,38 @@
               </article>
             </div>
 
-            <!-- Упражнение 07: Ритмический тест -->
+            <!-- Упражнение 07: Тренировка ритма -->
             <div class="exercise" id="rhythm-exercise">
               <div class="exercise-heading">
                 <div>
                   <div class="overline">
                     <span class="tiny-dot"></span> ТВОЯ ОЧЕРЕДЬ / 07
                   </div>
-                  <h2>Ритмический зачёт</h2>
-                  <p>Сделай серию из 10 ровных тапов в темпе метронома. Отчёт с отклонением в мс отправится в Telegram!</p>
+                  <h2>Тренажёр тренировки ритма</h2>
+                  <p>Выбери ритмический паттерн и отбей его точно в долю кнопкой «ТАП» или Пробелом.</p>
                 </div>
                 <span class="exercise-stats" id="rhythm-test-stats">Серия: 0 • Успешно: 0</span>
               </div>
 
-              <div style="margin: 16px 0;">
+              <div class="controls" style="margin: 14px 0 10px;">
+                <label>
+                  Ритмический паттерн
+                  <select id="rhythm-pattern-select">
+                    <option value="quarters" selected>1. Ровные четверти (1 - 2 - 3 - 4) • Базовый пульс</option>
+                    <option value="eighths">2. Восьмые доли (1-и, 2-и, 3-и, 4-и) • Удвоенная частота</option>
+                    <option value="syncopation">3. Синкопа (акцент на слабую долю «и») • Джазовый кач</option>
+                  </select>
+                </label>
+              </div>
+
+              <div style="margin: 14px 0;">
                 <button class="button button-accent" id="rhythm-start-challenge-btn" type="button">
-                  ▶ Начать ритмический раунд (10 тапов)
+                  ▶ Начать ритмическое упражнение (8 тапов)
                 </button>
               </div>
 
               <p class="feedback" id="rhythm-challenge-feedback">
-                Нажми кнопку выше, включится метроном, и отбей 10 ударов ровно в первую долю!
+                Нажми кнопку выше, включится метроном, и отбей ритмический рисунок точно в такт!
               </p>
             </div>
           </section>
@@ -1443,8 +1480,12 @@
 
                 <div class="tg-toggle-list">
                   <label class="tg-toggle-item">
+                    <input type="checkbox" id="tg-send-completed" checked />
+                    <span>Отправлять отчёты о выполненных упражнениях (какие задания сделаны)</span>
+                  </label>
+                  <label class="tg-toggle-item">
                     <input type="checkbox" id="tg-send-errors" checked />
-                    <span>Отправлять каждую ошибку в упражнениях с подробным музыкальным разбором</span>
+                    <span>Отправлять сообщения об ошибках в упражнениях с подробным разбором</span>
                   </label>
                   <label class="tg-toggle-item">
                     <input type="checkbox" id="tg-send-streaks" checked />
