@@ -1,2621 +1,2199 @@
-/* ==========================================================================
-   Ладно · Фортепиано — интерактивная логика, звук, нотный стан и Telegram-бот
-   ========================================================================== */
+"use strict";
 
-(function () {
-  "use strict";
-
-  /* ------------------------------------------------------------------------
-     1. КОНСТАНТЫ И МУЗЫКАЛЬНЫЕ ДАННЫЕ
-     ------------------------------------------------------------------------ */
-  const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const NOTE_RU = ["До", "До♯", "Ре", "Ре♯", "Ми", "Фа", "Фа♯", "Соль", "Соль♯", "Ля", "Ля♯", "Си"];
-
-  // Сопоставление клавиш клавиатуры компьютера с нотами (1-я октава и начало 2-й)
-  const KEY_SHORTCUTS = {
-    KeyA: 60, // C4 (До 1)
-    KeyW: 61, // C#4
-    KeyS: 62, // D4 (Ре 1)
-    KeyE: 63, // D#4
-    KeyD: 64, // E4 (Ми 1)
-    KeyF: 65, // F4 (Фа 1)
-    KeyT: 66, // F#4
-    KeyG: 67, // G4 (Соль 1)
-    KeyY: 68, // G#4
-    KeyH: 69, // A4 (Ля 1)
-    KeyU: 70, // A#4
-    KeyJ: 71, // B4 (Си 1)
-    KeyK: 72, // C5 (До 2)
-    KeyO: 73, // C#5
-    KeyL: 74, // D5 (Ре 2)
-    KeyP: 75, // D#5
-    Semicolon: 76, // E5 (Ми 2)
-  };
-
-  const SHORTCUT_LABELS = {
-    60: "A", 61: "W", 62: "S", 63: "E", 64: "D", 65: "F",
-    66: "T", 67: "G", 68: "Y", 69: "H", 70: "U", 71: "J",
-    72: "K", 73: "O", 74: "L", 75: "P", 76: ";"
-  };
-
-  const INTERVALS = [
-    { id: "m2", name: "Малая секунда", semitones: 1, song: "«Челюсти» (тревога, 1 полутон)" },
-    { id: "M2", name: "Большая секунда", semitones: 2, song: "«В траве сидел кузнечик» (шаг)" },
-    { id: "m3", name: "Малая терция", semitones: 3, song: "Минорное настроение, колыбельная" },
-    { id: "M3", name: "Большая терция", semitones: 4, song: "«Чижик-пыжик», «Ку-ку» (мажор)" },
-    { id: "P4", name: "Чистая кварта", semitones: 5, song: "Торжественный гимн, призыв" },
-    { id: "TT", name: "Тритон", semitones: 6, song: "Заставка The Simpsons (напряжение)" },
-    { id: "P5", name: "Чистая квинта", semitones: 7, song: "Тема Star Wars (космос, мощь)" },
-    { id: "m6", name: "Малая секста", semitones: 8, song: "Love Story (романтика)" },
-    { id: "M6", name: "Большая секста", semitones: 9, song: "«В лесу родилась ёлочка»" },
-    { id: "m7", name: "Малая септима", semitones: 10, song: "«Somewhere» (West Side Story)" },
-    { id: "M7", name: "Большая септима", semitones: 11, song: "Острое тяготение в октаву" },
-    { id: "P8", name: "Чистая октава", semitones: 12, song: "«Over the Rainbow» (слияние)" },
-  ];
-
-  const TRIADS = {
-    major: { name: "Мажор", offsets: [0, 4, 7], desc: "Светлый, устойчивый (б.3 + м.3)" },
-    minor: { name: "Минор", offsets: [0, 3, 7], desc: "Мягкий, задумчивый (м.3 + б.3)" },
-    dim: { name: "Уменьшенное", offsets: [0, 3, 6], desc: "Сжатое, напряжённое (м.3 + м.3)" },
-    aug: { name: "Увеличенное", offsets: [0, 4, 8], desc: "Таинственное, парящее (б.3 + б.3)" },
-    sus4: { name: "Sus4", offsets: [0, 5, 7], desc: "Зависающее (ч.4 + б.2)" },
-  };
-
-  // База аккордов для упражнений на запоминание (аккордовый тренажёр)
-  const MEMORIZE_CHORDS = [
-    { id: "C", name: "C (До мажор)", rootPc: 0, offsets: [0, 4, 7], notes: ["C", "E", "G"], ruNotes: ["До", "Ми", "Соль"], type: "Мажор" },
-    { id: "Dm", name: "Dm (Ре минор)", rootPc: 2, offsets: [0, 3, 7], notes: ["D", "F", "A"], ruNotes: ["Ре", "Фа", "Ля"], type: "Минор" },
-    { id: "Em", name: "Em (Ми минор)", rootPc: 4, offsets: [0, 3, 7], notes: ["E", "G", "B"], ruNotes: ["Ми", "Соль", "Си"], type: "Минор" },
-    { id: "F", name: "F (Фа мажор)", rootPc: 5, offsets: [0, 4, 7], notes: ["F", "A", "C"], ruNotes: ["Фа", "Ля", "До"], type: "Мажор" },
-    { id: "G", name: "G (Соль мажор)", rootPc: 7, offsets: [0, 4, 7], notes: ["G", "B", "D"], ruNotes: ["Соль", "Си", "Ре"], type: "Мажор" },
-    { id: "Am", name: "Am (Ля минор)", rootPc: 9, offsets: [0, 3, 7], notes: ["A", "C", "E"], ruNotes: ["Ля", "До", "Ми"], type: "Минор" },
-    { id: "Bdim", name: "Bdim (Си уменьшенное)", rootPc: 11, offsets: [0, 3, 6], notes: ["B", "D", "F"], ruNotes: ["Си", "Ре", "Фа"], type: "Уменьшенное" },
-    { id: "D", name: "D (Ре мажор)", rootPc: 2, offsets: [0, 4, 7], notes: ["D", "F#", "A"], ruNotes: ["Ре", "Фа♯", "Ля"], type: "Мажор" },
-    { id: "A", name: "A (Ля мажор)", rootPc: 9, offsets: [0, 4, 7], notes: ["A", "C#", "E"], ruNotes: ["Ля", "До♯", "Ми"], type: "Мажор" },
-    { id: "E", name: "E (Ми мажор)", rootPc: 4, offsets: [0, 4, 7], notes: ["E", "G#", "B"], ruNotes: ["Ми", "Соль♯", "Си"], type: "Мажор" }
-  ];
-
-  const SEVENTHS = {
-    dom7: { name: "Септаккорд (C7)", offsets: [0, 4, 7, 10], desc: "Мажор + малая 7 (двигатель гармонии)" },
-    maj7: { name: "Большой мажорный (Cmaj7)", offsets: [0, 4, 7, 11], desc: "Мажор + большая 7 (джазовый свет)" },
-    m7: { name: "Малый минорный (Cm7)", offsets: [0, 3, 7, 10], desc: "Минор + малая 7 (соул, бархатный звук)" },
-    m7b5: { name: "Полууменьшенный (Cø7)", offsets: [0, 3, 6, 10], desc: "Уменьшенное + малая 7 (ii ступень в миноре)" },
-    dim7: { name: "Уменьшенный (C°7)", offsets: [0, 3, 6, 9], desc: "Три малых терции подряд (драма)" },
-  };
-
-  const SCALES = {
-    major: {
-      name: "Натуральный мажор",
-      offsets: [0, 2, 4, 5, 7, 9, 11, 12],
-      fingeringRight: [1, 2, 3, 1, 2, 3, 4, 5],
-      fingeringLeft: [5, 4, 3, 2, 1, 3, 2, 1],
-      formula: "Тон — Тон — Полутон — Тон — Тон — Тон — Полутон"
-    },
-    minor_natural: {
-      name: "Натуральный минор",
-      offsets: [0, 2, 3, 5, 7, 8, 10, 12],
-      fingeringRight: [1, 2, 3, 1, 2, 3, 4, 5],
-      fingeringLeft: [5, 4, 3, 2, 1, 3, 2, 1],
-      formula: "Тон — Полутон — Тон — Тон — Полутон — Тон — Тон"
-    },
-    minor_harmonic: {
-      name: "Гармонический минор (VII♯)",
-      offsets: [0, 2, 3, 5, 7, 8, 11, 12],
-      fingeringRight: [1, 2, 3, 1, 2, 3, 4, 5],
-      fingeringLeft: [5, 4, 3, 2, 1, 3, 2, 1],
-      formula: "Повышенная VII ступень (характерный восточный колорит)"
-    },
-    pentatonic_major: {
-      name: "Мажорная пентатоника",
-      offsets: [0, 2, 4, 7, 9, 12],
-      fingeringRight: [1, 2, 3, 1, 2, 3],
-      fingeringLeft: [5, 4, 3, 2, 1, 1],
-      formula: "I — II — III — V — VI (без полутонов)"
-    },
-    blues: {
-      name: "Блюзовая гамма",
-      offsets: [0, 3, 5, 6, 7, 10, 12],
-      fingeringRight: [1, 2, 3, 4, 1, 2, 3],
-      fingeringLeft: [5, 4, 3, 2, 1, 2, 1],
-      formula: "Минорная пентатоника + пониженная V ступень (blue note)"
-    }
-  };
-
-  /* ------------------------------------------------------------------------
-     2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ И ХРАНИЛИЩЕ LOCALSTORAGE
-     ------------------------------------------------------------------------ */
-  const STORAGE_KEY = "ladno-piano-v1";
-  const TG_STORAGE_KEY = "ladno_piano_tg_v1";
-
-  const DEFAULT_TG_SETTINGS = {
-    botToken: "9194715215:AAE7Tly-kvnSCpzHL7zb12mZkM1uiXZkEJY",
-    chatId: "",
-    botUsername: "PianoTheoryTrainerBot",
-    sendCompleted: true,
-    sendErrors: true,
-    sendStreaks: true,
-    sendSummary: true,
-    log: []
-  };
-
-  let state = {
-    totalAnswered: 0,
-    totalCorrect: 0,
-    totalErrors: 0,
-    currentStreak: 0,
-    bestStreak: 0,
-    timbre: "grand",
-    labelMode: "doremi",
-    showShortcuts: true,
-    activeNotes: new Set(),
-    recordedNotes: [],
-    isRecording: false,
-    statsByExercise: {}
-  };
-
-  let tgSettings = Object.assign({}, DEFAULT_TG_SETTINGS);
-
-  function loadState() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        Object.assign(state, parsed);
-      }
-    } catch (e) {
-      console.warn("Ошибка чтения localStorage", e);
-    }
-    try {
-      const savedTg = localStorage.getItem(TG_STORAGE_KEY);
-      if (savedTg) {
-        const parsedTg = JSON.parse(savedTg);
-        Object.assign(tgSettings, parsedTg);
-      }
-    } catch (e) {
-      console.warn("Ошибка чтения настроек Telegram", e);
-    }
+/*
+ * ЛАДНО — приложение без сборщика и сервера.
+ * Высота хранится в MIDI: C4 = 60. Остаток от деления на 12 — класс ноты.
+ * Название ноты хранится отдельно: C# и Db звучат одинаково, но пишутся по-разному.
+ */
+const $ = (selector) => document.querySelector(selector);
+const byId = (id) => document.getElementById(id);
+const mod = (number, base = 12) => ((number % base) + base) % base;
+const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+const shuffle = (items) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+  return copy;
+};
+const unique = (items) => [...new Set(items)];
+const escapeHTML = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
 
-  function saveState() {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          totalAnswered: state.totalAnswered,
-          totalCorrect: state.totalCorrect,
-          totalErrors: state.totalErrors,
-          currentStreak: state.currentStreak,
-          bestStreak: state.bestStreak,
-          statsByExercise: state.statsByExercise
-        })
-      );
-    } catch (e) {}
+// Строки идут сверху вниз: тонкая первая струна — сверху, толстая шестая — снизу.
+const STRINGS = [
+  { name: "e", midi: 64 },
+  { name: "B", midi: 59 },
+  { name: "G", midi: 55 },
+  { name: "D", midi: 50 },
+  { name: "A", midi: 45 },
+  { name: "E", midi: 40 },
+];
+const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+const NATURAL_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const CHROMATIC = [
+  "C",
+  "C#",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+];
+const SHARP_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
+const ROOTS = [...CHROMATIC];
+
+// В названии также поддержаны двойные знаки: они необходимы, например, для C°7.
+function parseNote(name) {
+  const match = /^([A-G])(#{1,2}|b{1,2})?$/.exec(name);
+  if (!match) throw new Error("Неизвестная нота: " + name);
+  const accidental = match[2] || "";
+  const alteration = accidental.startsWith("#")
+    ? accidental.length
+    : -accidental.length;
+  return {
+    letter: match[1],
+    accidental,
+    alteration,
+    pc: mod(NATURAL_PC[match[1]] + alteration),
+  };
+}
+function prettyNote(name) {
+  return name.replace(/#/g, "♯").replace(/b/g, "♭");
+}
+function midiOctave(midi) {
+  return Math.floor(midi / 12) - 1;
+}
+function writtenOctave(name, midi) {
+  const note = parseNote(name);
+  return (
+    Math.floor((midi - NATURAL_PC[note.letter] - note.alteration) / 12) - 1
+  );
+}
+function writtenNote(name, midi) {
+  return prettyNote(name) + writtenOctave(name, midi);
+}
+function rootMidi(root) {
+  return 48 + parseNote(root).pc;
+} // от C3 до B3
+
+// Сохраняем правильное имя ступени, а не только её звучание.
+// Например, терция C# — это E#, а не F; септима C°7 — Bbb, а не A.
+function spellInterval(root, semitones, letterSteps) {
+  const parsed = parseNote(root);
+  const letter = LETTERS[mod(LETTERS.indexOf(parsed.letter) + letterSteps, 7)];
+  const wanted = mod(parsed.pc + semitones);
+  let difference = mod(wanted - NATURAL_PC[letter]);
+  if (difference > 6) difference -= 12;
+  return (
+    letter + (difference > 0 ? "#".repeat(difference) : "b".repeat(-difference))
+  );
+}
+
+const INTERVALS = [
+  {
+    id: "p1",
+    name: "Чистая прима",
+    semitones: 0,
+    steps: 0,
+    character: "совершенный консонанс",
+  },
+  {
+    id: "m2",
+    name: "Малая секунда",
+    semitones: 1,
+    steps: 1,
+    character: "диссонанс",
+  },
+  {
+    id: "M2",
+    name: "Большая секунда",
+    semitones: 2,
+    steps: 1,
+    character: "диссонанс",
+  },
+  {
+    id: "m3",
+    name: "Малая терция",
+    semitones: 3,
+    steps: 2,
+    character: "несовершенный консонанс",
+  },
+  {
+    id: "M3",
+    name: "Большая терция",
+    semitones: 4,
+    steps: 2,
+    character: "несовершенный консонанс",
+  },
+  {
+    id: "p4",
+    name: "Чистая кварта",
+    semitones: 5,
+    steps: 3,
+    character: "консонанс; над басом может требовать разрешения",
+  },
+  {
+    id: "a4",
+    name: "Тритон (увеличенная кварта)",
+    semitones: 6,
+    steps: 3,
+    character: "диссонанс; звучит как уменьшённая квинта",
+  },
+  {
+    id: "p5",
+    name: "Чистая квинта",
+    semitones: 7,
+    steps: 4,
+    character: "совершенный консонанс",
+  },
+  {
+    id: "m6",
+    name: "Малая секста",
+    semitones: 8,
+    steps: 5,
+    character: "несовершенный консонанс",
+  },
+  {
+    id: "M6",
+    name: "Большая секста",
+    semitones: 9,
+    steps: 5,
+    character: "несовершенный консонанс",
+  },
+  {
+    id: "m7",
+    name: "Малая септима",
+    semitones: 10,
+    steps: 6,
+    character: "диссонанс",
+  },
+  {
+    id: "M7",
+    name: "Большая септима",
+    semitones: 11,
+    steps: 6,
+    character: "диссонанс",
+  },
+  {
+    id: "p8",
+    name: "Чистая октава",
+    semitones: 12,
+    steps: 7,
+    character: "совершенный консонанс",
+  },
+];
+
+// offsets — полутона от корня; steps — сколько букв нужно пройти по алфавиту нот.
+const TRIADS = [
+  {
+    id: "major",
+    name: "Мажорное",
+    symbol: "",
+    offsets: [0, 4, 7],
+    steps: [0, 2, 4],
+    description:
+      "Большая терция + малая терция: 4 + 3 полутона. Обычно звучит светло и устойчиво.",
+  },
+  {
+    id: "minor",
+    name: "Минорное",
+    symbol: "m",
+    offsets: [0, 3, 7],
+    steps: [0, 2, 4],
+    description:
+      "Малая терция + большая терция: 3 + 4 полутона. Обычно звучит мягче и темнее.",
+  },
+  {
+    id: "dim",
+    name: "Уменьшённое",
+    symbol: "°",
+    offsets: [0, 3, 6],
+    steps: [0, 2, 4],
+    description: "Две малые терции: 3 + 3 полутона. Звучит неустойчиво.",
+  },
+  {
+    id: "aug",
+    name: "Увеличенное",
+    symbol: "+",
+    offsets: [0, 4, 8],
+    steps: [0, 2, 4],
+    description:
+      "Две большие терции: 4 + 4 полутона. Звучит напряжённо и необычно.",
+  },
+];
+const SEVENTHS = [
+  {
+    id: "maj7",
+    name: "Большой мажорный (maj7)",
+    symbol: "maj7",
+    offsets: [0, 4, 7, 11],
+    steps: [0, 2, 4, 6],
+    description: "Мажорное трезвучие и большая септима: 4 + 3 + 4 полутона.",
+  },
+  {
+    id: "m7",
+    name: "Малый минорный (m7)",
+    symbol: "m7",
+    offsets: [0, 3, 7, 10],
+    steps: [0, 2, 4, 6],
+    description: "Минорное трезвучие и малая септима: 3 + 4 + 3 полутона.",
+  },
+  {
+    id: "dom7",
+    name: "Доминантсептаккорд (7)",
+    symbol: "7",
+    offsets: [0, 4, 7, 10],
+    steps: [0, 2, 4, 6],
+    description: "Мажорное трезвучие и малая септима: 4 + 3 + 3 полутона.",
+  },
+  {
+    id: "dim7",
+    name: "Уменьшённый (°7)",
+    symbol: "°7",
+    offsets: [0, 3, 6, 9],
+    steps: [0, 2, 4, 6],
+    description:
+      "Уменьшённое трезвучие и уменьшённая септима: три малые терции, 3 + 3 + 3.",
+  },
+  {
+    id: "half",
+    name: "Полууменьшённый (m7♭5)",
+    symbol: "m7♭5",
+    offsets: [0, 3, 6, 10],
+    steps: [0, 2, 4, 6],
+    description: "Уменьшённое трезвучие и малая септима: 3 + 3 + 4 полутона.",
+  },
+  {
+    id: "mMaj7",
+    name: "Большой минорный (m maj7)",
+    symbol: "m(maj7)",
+    offsets: [0, 3, 7, 11],
+    steps: [0, 2, 4, 6],
+    description: "Минорное трезвучие и большая септима: 3 + 4 + 4 полутона.",
+  },
+];
+const SCALES = [
+  {
+    id: "major",
+    name: "Мажорная",
+    offsets: [0, 2, 4, 5, 7, 9, 11],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – Т – П – Т – Т – Т – П",
+    description:
+      "Светлая опорная палитра; тот же набор ступеней называют ионийским ладом. В C: C D E F G A B.",
+  },
+  {
+    id: "naturalMinor",
+    name: "Минорная натуральная",
+    offsets: [0, 2, 3, 5, 7, 8, 10],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – П – Т – Т – П – Т – Т",
+    description:
+      "Более мягкая и часто грустная окраска; это эолийский лад. В A: A B C D E F G.",
+  },
+  {
+    id: "harmonicMinor",
+    name: "Минорная гармоническая",
+    offsets: [0, 2, 3, 5, 7, 8, 11],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – П – Т – Т – П – 1½Т – П",
+    description:
+      "Натуральный минор с повышенной VII ступенью. В A: G становится G♯; на 3-й струне это 1-й лад вместо открытой.",
+  },
+  {
+    id: "melodicMinor",
+    name: "Минорная мелодическая ↑",
+    offsets: [0, 2, 3, 5, 7, 9, 11],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – П – Т – Т – Т – Т – П",
+    description:
+      "В классической практике вверх повышаются VI и VII ступени; вниз играют натуральный минор. На грифе и стане показан подъём.",
+  },
+  {
+    id: "majorPent",
+    name: "Мажорная пентатоника",
+    offsets: [0, 2, 4, 7, 9],
+    steps: [0, 1, 2, 4, 5],
+    formula: "Т – Т – 1½Т – Т – 1½Т",
+    description:
+      "Пять звуков без IV и VII ступеней мажора. В C это C D E G A — удобно начинать импровизацию.",
+  },
+  {
+    id: "minorPent",
+    name: "Минорная пентатоника",
+    offsets: [0, 3, 5, 7, 10],
+    steps: [0, 2, 3, 4, 6],
+    formula: "1½Т – Т – Т – 1½Т – Т",
+    description:
+      "Пять звуков без II и VI ступеней натурального минора. В A это A C D E G.",
+  },
+  {
+    id: "dorian",
+    name: "Дорийский лад",
+    offsets: [0, 2, 3, 5, 7, 9, 10],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – П – Т – Т – Т – П – Т",
+    description:
+      "Минорная окраска с повышенной VI ступенью. В A вместо F натурального минора звучит F♯.",
+  },
+  {
+    id: "phrygian",
+    name: "Фригийский лад",
+    offsets: [0, 1, 3, 5, 7, 8, 10],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "П – Т – Т – Т – П – Т – Т",
+    description:
+      "Минорная окраска с пониженной II ступенью. В A полутон сразу от A к B♭ создаёт характерное напряжение.",
+  },
+  {
+    id: "lydian",
+    name: "Лидийский лад",
+    offsets: [0, 2, 4, 6, 7, 9, 11],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – Т – Т – П – Т – Т – П",
+    description:
+      "Мажорная окраска с повышенной IV ступенью. В C вместо F звучит F♯ — это придаёт ощущение простора.",
+  },
+  {
+    id: "mixolydian",
+    name: "Миксолидийский лад",
+    offsets: [0, 2, 4, 5, 7, 9, 10],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "Т – Т – П – Т – Т – П – Т",
+    description:
+      "Мажорная окраска с пониженной VII ступенью. В C вместо B звучит B♭; лад подходит к C7.",
+  },
+  {
+    id: "locrian",
+    name: "Локрийский лад",
+    offsets: [0, 1, 3, 5, 6, 8, 10],
+    steps: [0, 1, 2, 3, 4, 5, 6],
+    formula: "П – Т – Т – П – Т – Т – Т",
+    description:
+      "Неустойчивый минорный лад с пониженной II и V ступенями. В C это D♭ и G♭.",
+  },
+];
+const PROGRESSIONS = [
+  { id: "1451", name: "I – IV – V – I", degrees: [0, 3, 4, 0] },
+  { id: "1564", name: "I – V – vi – IV", degrees: [0, 4, 5, 3] },
+  { id: "1645", name: "I – vi – IV – V", degrees: [0, 5, 3, 4] },
+  { id: "2511", name: "ii – V – I – I", degrees: [1, 4, 0, 0] },
+];
+const ROMANS = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
+const FUNCTIONS = ["T", "S", "T", "S", "D", "T", "D"];
+const CIRCLE = [
+  { major: "C", minor: "Am", count: 0, kind: "" },
+  { major: "G", minor: "Em", count: 1, kind: "#" },
+  { major: "D", minor: "Bm", count: 2, kind: "#" },
+  { major: "A", minor: "F#m", count: 3, kind: "#" },
+  { major: "E", minor: "C#m", count: 4, kind: "#" },
+  { major: "B", minor: "G#m", count: 5, kind: "#" },
+  { major: "F#", minor: "D#m", count: 6, kind: "#" },
+  { major: "Db", minor: "Bbm", count: 5, kind: "b" },
+  { major: "Ab", minor: "Fm", count: 4, kind: "b" },
+  { major: "Eb", minor: "Cm", count: 3, kind: "b" },
+  { major: "Bb", minor: "Gm", count: 2, kind: "b" },
+  { major: "F", minor: "Dm", count: 1, kind: "b" },
+];
+// Три дополнительные записи тех же высот завершают круг до 15 мажорных тональностей.
+const ENHARMONIC_KEYS = [
+  { major: "Cb", minor: "Abm", count: 7, kind: "b", circleIndex: 5 },
+  { major: "Gb", minor: "Ebm", count: 6, kind: "b", circleIndex: 6 },
+  { major: "C#", minor: "A#m", count: 7, kind: "#", circleIndex: 7 },
+];
+const KEY_ORDER = {
+  "#": ["F#", "C#", "G#", "D#", "A#", "E#", "B#"],
+  b: ["Bb", "Eb", "Ab", "Db", "Gb", "Cb", "Fb"],
+};
+
+function getScale(id) {
+  return SCALES.find((item) => item.id === id) || SCALES[0];
+}
+function getTriad(id) {
+  return TRIADS.find((item) => item.id === id) || TRIADS[0];
+}
+function getSeventh(id) {
+  return SEVENTHS.find((item) => item.id === id) || SEVENTHS[0];
+}
+function getInterval(id) {
+  return INTERVALS.find((item) => item.id === id) || INTERVALS[4];
+}
+function getProgression(id) {
+  return PROGRESSIONS.find((item) => item.id === id) || PROGRESSIONS[0];
+}
+function scaleNames(root, scale) {
+  return scale.offsets.map((n, i) => spellInterval(root, n, scale.steps[i]));
+}
+function scalePcs(root, scale) {
+  return scale.offsets.map((n) => mod(parseNote(root).pc + n));
+}
+function nameMap(names) {
+  return Object.fromEntries(names.map((name) => [parseNote(name).pc, name]));
+}
+function scaleNotes(root, scale, withOctave = true) {
+  const midi = rootMidi(root);
+  const names = scaleNames(root, scale);
+  const result = scale.offsets.map((offset, i) => ({
+    midi: midi + offset,
+    name: names[i],
+  }));
+  if (withOctave) result.push({ midi: midi + 12, name: root });
+  return result;
+}
+function makeChord(root, type, inversion = 0) {
+  const names = type.offsets.map((offset, i) =>
+    spellInterval(root, offset, type.steps[i]),
+  );
+  const midi = rootMidi(root);
+  const notes = type.offsets.map((offset, i) => ({
+    midi: midi + offset + (i < inversion ? 12 : 0),
+    name: names[i],
+  }));
+  notes.sort((a, b) => a.midi - b.midi);
+  return {
+    root,
+    type,
+    names,
+    notes,
+    pcs: names.map((n) => parseNote(n).pc),
+    symbol: prettyNote(root) + type.symbol,
+  };
+}
+function chordOfDegree(root, degree) {
+  const major = getScale("major");
+  const name = scaleNames(root, major)[degree];
+  const type = getTriad(
+    ["major", "minor", "minor", "major", "major", "minor", "dim"][degree],
+  );
+  return {
+    ...makeChord(name, type),
+    degree,
+    roman: ROMANS[degree],
+    fn: FUNCTIONS[degree],
+  };
+}
+function progressionChords(root, progression) {
+  return progression.degrees.map((degree) => chordOfDegree(root, degree));
+}
+
+// Все позиции конкретной высоты на первых 12 ладах, включая открытые струны.
+function positionsForMidi(midi) {
+  return STRINGS.flatMap((string, index) => {
+    const fret = midi - string.midi;
+    return fret >= 0 && fret <= 12
+      ? [{ string: index, fret, midi, key: index + ":" + fret }]
+      : [];
+  });
+}
+function describePosition(position) {
+  return `${position.string + 1}-я струна, ${position.fret === 0 ? "открытая" : position.fret + "-й лад"}`;
+}
+function bestPosition(midi) {
+  return positionsForMidi(midi).sort(
+    (a, b) => a.fret - b.fret || b.string - a.string,
+  )[0];
+}
+// Подбираем реальные позиции для одновременного взятия: одна нота на струну,
+// нижний звук находится на более толстой струне. Сначала выдаём компактные варианты.
+function findVoicings(notes) {
+  // Бас оставляем тем же, остальные голоса можно переставить и поднять на октаву.
+  // Поэтому варианты не ограничены тесным расположением и удобнее для руки.
+  const upper = notes.slice(1);
+  function permutations(items) {
+    if (!items.length) return [[]];
+    return items.flatMap((item, i) =>
+      permutations(items.filter((_, j) => j !== i)).map((rest) => [
+        item,
+        ...rest,
+      ]),
+    );
   }
-
-  function saveTgSettings() {
-    try {
-      localStorage.setItem(TG_STORAGE_KEY, JSON.stringify(tgSettings));
-    } catch (e) {}
-  }
-
-  /* ------------------------------------------------------------------------
-     3. ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API)
-     ------------------------------------------------------------------------ */
-  let audioCtx = null;
-
-  function getAudioContext() {
-    if (!audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
-      }
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume();
-    }
-    return audioCtx;
-  }
-
-  function playPianoTone(midi, duration = 1.2, velocity = 0.8) {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
-    const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    const now = ctx.currentTime;
-
-    const mainGain = ctx.createGain();
-    const peakVolume = Math.min(0.35, (0.24 * velocity) / Math.sqrt(1));
-    mainGain.gain.setValueAtTime(0.0001, now);
-    mainGain.gain.linearRampToValueAtTime(peakVolume, now + 0.006);
-    mainGain.gain.exponentialRampToValueAtTime(peakVolume * 0.45, now + 0.18);
-    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    mainGain.connect(ctx.destination);
-
-    const osc1 = ctx.createOscillator();
-    osc1.type = state.timbre === "rhodes" ? "sine" : "triangle";
-    osc1.frequency.setValueAtTime(freq, now);
-
-    const osc2 = ctx.createOscillator();
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(freq * 2, now);
-    const gain2 = ctx.createGain();
-    gain2.gain.setValueAtTime(0.3, now);
-    gain2.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
-    osc2.connect(gain2);
-    gain2.connect(mainGain);
-
-    if (state.timbre === "grand") {
-      const osc3 = ctx.createOscillator();
-      osc3.type = "sine";
-      osc3.frequency.setValueAtTime(freq * 3, now);
-      const gain3 = ctx.createGain();
-      gain3.gain.setValueAtTime(0.12, now);
-      gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
-      osc3.connect(gain3);
-      gain3.connect(mainGain);
-      osc3.start(now);
-      osc3.stop(now + duration + 0.05);
-    }
-
-    osc1.connect(mainGain);
-    osc1.start(now);
-    osc2.start(now);
-    osc1.stop(now + duration + 0.05);
-    osc2.stop(now + duration + 0.05);
-  }
-
-  function playMidi(midi, duration = 1.0, velocity = 0.8) {
-    getAudioContext();
-    if (state.isRecording) {
-      state.recordedNotes.push({ midi, time: Date.now() });
-      const playBtn = document.getElementById("freelab-play-rec-btn");
-      if (playBtn) playBtn.disabled = false;
-    }
-    playPianoTone(midi, duration, velocity);
-  }
-
-  function playChordMidi(midis, duration = 1.6, arpeggio = false) {
-    getAudioContext();
-    if (!midis || !midis.length) return;
-    if (arpeggio) {
-      midis.forEach((m, idx) => {
-        setTimeout(() => playPianoTone(m, duration, 0.75), idx * 120);
+  const combinations = [],
+    seen = new Set();
+  [-12, 0, 12].forEach((shift) =>
+    permutations(upper).forEach((order) => {
+      const voices = [notes[0], ...order];
+      const lists = voices.map((note, index) => {
+        const midis =
+          index === 0
+            ? [note.midi + shift]
+            : [note.midi + shift, note.midi + shift + 12];
+        return midis.flatMap(positionsForMidi);
       });
-    } else {
-      midis.forEach((m) => playPianoTone(m, duration, 0.75));
-    }
-  }
-
-  /* ------------------------------------------------------------------------
-     4. TELEGRAM-БОТ: ОТПРАВКА СООБЩЕНИЙ О ВЫПОЛНЕНИИ И ОШИБКАХ
-     ------------------------------------------------------------------------ */
-  async function sendTelegramMessage(text) {
-    if (!tgSettings.botToken || !tgSettings.chatId) {
-      return { success: false, reason: "Не указан Chat ID" };
-    }
-
-    const url = `https://api.telegram.org/bot${tgSettings.botToken}/sendMessage`;
-    const payload = {
-      chat_id: tgSettings.chatId,
-      text: text,
-      parse_mode: "HTML"
-    };
-
-    try {
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if (data.ok) {
-        logTelegramEntry(text, true);
-        updateTelegramStatusUI();
-        return { success: true };
-      } else {
-        logTelegramEntry(text, false, data.description);
-        updateTelegramStatusUI();
-        return { success: false, reason: data.description };
+      function walk(index, current) {
+        if (index === lists.length) {
+          const key = current.map((p) => p.key).join("|");
+          if (seen.has(key)) return;
+          seen.add(key);
+          const fretted = current.map((p) => p.fret).filter((f) => f > 0);
+          const span = fretted.length
+            ? Math.max(...fretted) - Math.min(...fretted)
+            : 0;
+          const stringsSpan =
+            current[0].string - current[current.length - 1].string;
+          const average =
+            current.reduce((sum, p) => sum + p.fret, 0) / current.length;
+          const score =
+            span * 3 +
+            Math.max(0, span - 4) * 12 +
+            stringsSpan * 1.5 +
+            average * 0.3;
+          combinations.push({ positions: [...current], span, score });
+          return;
+        }
+        lists[index].forEach((p) => {
+          const previous = current[current.length - 1];
+          if (
+            previous &&
+            (previous.string <= p.string || previous.midi >= p.midi)
+          )
+            return;
+          walk(index + 1, [...current, p]);
+        });
       }
-    } catch (err) {
-      logTelegramEntry(text, false, err.message || "Ошибка сети");
-      updateTelegramStatusUI();
-      return { success: false, reason: err.message };
-    }
-  }
+      walk(0, []);
+    }),
+  );
+  const comfortable = combinations.filter((item) => item.span <= 4);
+  const candidates = comfortable.length ? comfortable : combinations;
+  return candidates
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 4)
+    .map((item) => item.positions);
+}
+function voicedNotes(positions, names) {
+  const map = nameMap(names);
+  return positions.map((position) => ({
+    midi: position.midi,
+    name: map[mod(position.midi)],
+  }));
+}
 
-  function logTelegramEntry(message, success, errorDesc = "") {
-    const timeStr = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const preview = message.replace(/<[^>]+>/g, "").slice(0, 110) + (message.length > 110 ? "..." : "");
-    tgSettings.log.unshift({
-      time: timeStr,
-      preview: preview,
-      success: success,
-      error: errorDesc
+/* Общий прогресс и прогресс по каждому упражнению сохраняются только в браузере. */
+const STORAGE_KEY = "ladno-progress-v1";
+const emptyProgress = () => ({
+  streak: 0,
+  mistakes: 0,
+  correct: 0,
+  exercises: {},
+});
+let storageAvailable = true;
+let progress = emptyProgress();
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    const saved = JSON.parse(raw);
+    if (saved && typeof saved === "object")
+      progress = {
+        ...emptyProgress(),
+        ...saved,
+        exercises: saved.exercises || {},
+      };
+  }
+} catch (error) {
+  storageAvailable = false;
+}
+let intervalTaskMode = "build";
+let keyTaskMode = "signs";
+function statsFor(key) {
+  return progress.exercises[key] || { streak: 0, mistakes: 0, correct: 0 };
+}
+function formatStats(key) {
+  const stats = statsFor(key);
+  return `✓ ${stats.streak} подряд  ·  × ${stats.mistakes} ошибок`;
+}
+function showStats() {
+  byId("top-streak").textContent = progress.streak;
+  document.querySelectorAll("[data-stats]").forEach((el) => {
+    el.textContent = formatStats(el.dataset.stats);
+  });
+  byId("interval-exercise-stats").textContent = formatStats(
+    intervalTaskMode === "build" ? "intervalBuild" : "intervalEar",
+  );
+  byId("key-exercise-stats").textContent = formatStats(
+    keyTaskMode === "signs" ? "keySigns" : "keyMod",
+  );
+  byId("storage-status").textContent = storageAvailable
+    ? "Прогресс хранится в этом браузере"
+    : "Сохранение недоступно: прогресс только до закрытия страницы";
+}
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  } catch (error) {
+    storageAvailable = false;
+  }
+  showStats();
+}
+function recordResult(key, isCorrect) {
+  const stats = statsFor(key);
+  if (isCorrect) {
+    progress.streak++;
+    progress.correct++;
+    stats.streak++;
+    stats.correct++;
+  } else {
+    progress.streak = 0;
+    progress.mistakes++;
+    stats.streak = 0;
+    stats.mistakes++;
+  }
+  progress.exercises[key] = stats;
+  saveProgress();
+}
+function setFeedback(id, text, state = "") {
+  const el = byId(id);
+  el.textContent = text;
+  el.className = "feedback" + (state ? " " + state : "");
+}
+function plural(number, forms) {
+  const n = Math.abs(number) % 100,
+    last = n % 10;
+  if (n >= 11 && n <= 14) return forms[2];
+  return last === 1 ? forms[0] : last >= 2 && last <= 4 ? forms[1] : forms[2];
+}
+function semiText(n) {
+  return `${n} ${plural(n, ["полутон", "полутона", "полутонов"])}`;
+}
+function fillSelect(id, entries, selected) {
+  const el = byId(id);
+  el.innerHTML = entries
+    .map(
+      (item) =>
+        `<option value="${escapeHTML(item.value)}">${escapeHTML(item.label)}</option>`,
+    )
+    .join("");
+  if (selected != null) el.value = selected;
+}
+function setSwitch(selector, attr, value) {
+  document.querySelectorAll(selector).forEach((button) => {
+    const active = button.getAttribute(attr) === value;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+function answerButtons(containerId, options, correctValue, callback) {
+  const container = byId(containerId);
+  container.innerHTML = "";
+  options.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer";
+    button.textContent = item.label;
+    button.dataset.value = String(item.value);
+    button.addEventListener("click", () => {
+      const correct = String(item.value) === String(correctValue);
+      container.querySelectorAll("button").forEach((b) => {
+        b.disabled = true;
+        if (b.dataset.value === String(correctValue))
+          b.classList.add("correct");
+      });
+      if (!correct) button.classList.add("wrong");
+      callback(correct, item);
     });
-    if (tgSettings.log.length > 30) tgSettings.log.pop();
-    saveTgSettings();
-    renderTelegramLog();
-  }
+    container.appendChild(button);
+  });
+}
+function makeOptions(correct, pool, count = 4) {
+  return shuffle([
+    correct,
+    ...shuffle(
+      pool.filter((item) => String(item.value) !== String(correct.value)),
+    ).slice(0, count - 1),
+  ]);
+}
 
-  function renderTelegramLog() {
-    const list = document.getElementById("tg-log-list");
-    if (!list) return;
-    if (!tgSettings.log || !tgSettings.log.length) {
-      list.innerHTML = `
-        <div class="tg-log-entry" style="color:#788b7b;">
-          <span>Здесь будут отображаться отчёты об отправленных в Telegram упражнениях, ошибках и сводках.</span>
-          <span class="tg-log-time">—</span>
-        </div>`;
-      return;
-    }
-
-    list.innerHTML = tgSettings.log
-      .map((entry) => `
-        <div class="tg-log-entry ${entry.success ? "success-entry" : "error-entry"}">
-          <div>
-            <b>${entry.success ? "✓ Доставлено:" : "✕ Ошибка отправки:"}</b>
-            <span>${escapeHtml(entry.preview)}</span>
-            ${entry.error ? `<div style="font-size:10px; color:#c94532; margin-top:2px;">Причина: ${escapeHtml(entry.error)}</div>` : ""}
-          </div>
-          <span class="tg-log-time">${entry.time}</span>
-        </div>
-      `)
-      .join("");
-  }
-
-  // Запрос информации о боте через getMe
-  async function fetchBotInfo() {
+/* Звук: Tone.js загружается с CDN. Если CDN недоступен, используем Web Audio. */
+let toneSynth = null;
+let nativeAudio = null;
+async function playEvents(events) {
+  if (window.Tone) {
     try {
-      const resp = await fetch(`https://api.telegram.org/bot${tgSettings.botToken}/getMe`);
-      const data = await resp.json();
-      if (data.ok && data.result?.username) {
-        tgSettings.botUsername = data.result.username;
-        const link = document.getElementById("open-tg-bot-link");
-        if (link) {
-          link.href = `https://t.me/${tgSettings.botUsername}`;
-          link.textContent = `Открыть @${tgSettings.botUsername} ↗`;
-        }
+      await window.Tone.start(); // Браузер разрешает звук только после действия пользователя.
+      if (!toneSynth) {
+        toneSynth = new window.Tone.PolySynth(window.Tone.Synth, {
+          oscillator: { type: "triangle" },
+          envelope: {
+            attack: 0.015,
+            decay: 0.18,
+            sustain: 0.32,
+            release: 0.65,
+          },
+        }).toDestination();
+        toneSynth.volume.value = -10;
       }
-    } catch (e) {}
-  }
-
-  // Автоматическое определение Chat ID через getUpdates
-  async function autoDetectTelegramChatId(silent = false) {
-    const statusMsg = document.getElementById("tg-status-message");
-    if (statusMsg) statusMsg.textContent = "Поиск входящих сообщений в боте...";
-
-    try {
-      const resp = await fetch(`https://api.telegram.org/bot${tgSettings.botToken}/getUpdates`);
-      const data = await resp.json();
-      if (!data.ok) {
-        if (statusMsg) statusMsg.textContent = "Ошибка API: " + (data.description || "не удалось получить обновления");
-        return;
-      }
-
-      const updates = data.result || [];
-      if (!updates.length) {
-        if (statusMsg) {
-          statusMsg.textContent = "Сообщений не найдено. Напишите боту /start и нажмите «Определить ID» ещё раз!";
-        }
-        if (!silent) {
-          alert("В боте пока нет сообщений. Откройте бота, отправьте ему /start, а затем нажмите 'Определить ID' ещё раз!");
-        }
-        return;
-      }
-
-      // Берём последнее сообщение от пользователя
-      let targetMsg = null;
-      for (let i = updates.length - 1; i >= 0; i--) {
-        const u = updates[i];
-        const m = u.message || u.edited_message || u.callback_query?.message;
-        if (m && m.chat && m.chat.id) {
-          targetMsg = m;
-          break;
-        }
-      }
-
-      if (targetMsg) {
-        const detectedId = String(targetMsg.chat.id);
-        const userName = targetMsg.from?.first_name || "музыкант";
-        tgSettings.chatId = detectedId;
-        const input = document.getElementById("tg-chat-id-input");
-        if (input) input.value = detectedId;
-        saveTgSettings();
-        updateTelegramStatusUI();
-
-        if (statusMsg) {
-          statusMsg.textContent = `Успешно! Подключен чат с ${userName} (ID: ${detectedId})`;
-        }
-
-        await sendTelegramMessage(
-          `🎹 <b>Привет, ${userName}!</b>\n` +
-          `Тренажёр <b>«Ладно · Фортепиано»</b> успешно подключен к твоему Telegram!\n\n` +
-          `Теперь бот присылает:\n` +
-          `• <b>Отчёты о выполненных упражнениях</b> (какие задания сделаны)\n` +
-          `• <b>Подробный разбор ошибок</b> (где ошибся и как исправить)\n` +
-          `• Поздравления с сериями успехов\n` +
-          `• Итоговую сводку тренировки\n\n` +
-          `<i>Приятной и вдохновляющей практики за клавишами! ✨</i>`
+      const start = window.Tone.now() + 0.04;
+      events.forEach((event) => {
+        const notes = unique(event.notes).map((midi) =>
+          window.Tone.Frequency(midi, "midi").toNote(),
         );
-
-        if (!silent) {
-          alert(`✅ Чат с ${userName} (ID: ${detectedId}) успешно подключен! Проверьте Telegram — бот уже отправил приветствие!`);
-        }
-      } else {
-        if (statusMsg) statusMsg.textContent = "Не удалось извлечь ID из сообщений.";
-      }
-    } catch (e) {
-      if (statusMsg) statusMsg.textContent = "Ошибка сети: " + e.message;
-    }
-  }
-
-  function updateTelegramStatusUI() {
-    const isConfigured = Boolean(tgSettings.chatId);
-    const topbarStatus = document.getElementById("topbar-tg-status");
-    const sidebarLabel = document.getElementById("sidebar-tg-label");
-    const sidebarDot = document.getElementById("sidebar-tg-dot");
-    const sidebarDesc = document.getElementById("sidebar-tg-desc");
-
-    if (topbarStatus) {
-      topbarStatus.textContent = isConfigured ? "Telegram: Активен" : "Настроить Telegram";
-    }
-    if (sidebarLabel) {
-      sidebarLabel.textContent = isConfigured ? "Telegram подключен" : "Настроить отчёты";
-    }
-    if (sidebarDot) {
-      sidebarDot.className = "tg-status-dot" + (isConfigured ? "" : " pending");
-    }
-    if (sidebarDesc) {
-      sidebarDesc.textContent = isConfigured
-        ? `Отчёты приходят в чат ID ${tgSettings.chatId}.`
-        : "Нажмите, чтобы подключить отправку отчётов в бот.";
-    }
-
-    const input = document.getElementById("tg-chat-id-input");
-    if (input && tgSettings.chatId) input.value = tgSettings.chatId;
-
-    const chkCompleted = document.getElementById("tg-send-completed");
-    if (chkCompleted) chkCompleted.checked = tgSettings.sendCompleted;
-    const chkErrors = document.getElementById("tg-send-errors");
-    if (chkErrors) chkErrors.checked = tgSettings.sendErrors;
-    const chkStreaks = document.getElementById("tg-send-streaks");
-    if (chkStreaks) chkStreaks.checked = tgSettings.sendStreaks;
-    const chkSummary = document.getElementById("tg-send-summary");
-    if (chkSummary) chkSummary.checked = tgSettings.sendSummary;
-  }
-
-  // 1. Отправка в Telegram: какие упражнения пользователь выполнял
-  async function notifyTelegramExerciseDone(exerciseName, taskDescription, details) {
-    if (!tgSettings.sendCompleted || !tgSettings.chatId) return;
-
-    const roundStats = state.statsByExercise[exerciseName] || { answered: 1, correct: 1 };
-    const pct = roundStats.answered > 0 ? Math.round((roundStats.correct / roundStats.answered) * 100) : 100;
-
-    const text =
-      `✅ <b>Выполнено упражнение «Ладно · Фортепиано»</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📌 <b>Раздел:</b> ${exerciseName}\n` +
-      `🎯 <b>Задание:</b> ${taskDescription}\n` +
-      `✨ <b>Результат:</b> ${details}\n\n` +
-      `📊 <b>Серия побед:</b> ${state.currentStreak} подряд | Точность в теме: ${pct}% (${roundStats.correct}/${roundStats.answered})`;
-
-    await sendTelegramMessage(text);
-  }
-
-  // 2. Отправка в Telegram: где пользователь ошибался при выполнении упражнений
-  async function notifyTelegramError(exerciseName, questionText, userAnswer, correctAnswer, explanation) {
-    if (!tgSettings.sendErrors || !tgSettings.chatId) return;
-
-    const roundStats = state.statsByExercise[exerciseName] || { answered: 1, correct: 0 };
-    const pct = roundStats.answered > 0 ? Math.round((roundStats.correct / roundStats.answered) * 100) : 0;
-
-    const text =
-      `❌ <b>Ошибка в упражнении «Ладно · Фортепиано»</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📌 <b>Раздел:</b> ${exerciseName}\n` +
-      `❓ <b>Задание:</b> ${questionText}\n` +
-      `🔴 <b>Твой ответ:</b> ${userAnswer}\n` +
-      `🟢 <b>Правильный ответ:</b> ${correctAnswer}\n\n` +
-      `💡 <b>Где была ошибка и как запомнить:</b>\n${explanation}\n\n` +
-      `📊 <b>Серия прервана:</b> 0 подряд | Точность в теме: ${pct}% (${roundStats.correct}/${roundStats.answered})`;
-
-    await sendTelegramMessage(text);
-  }
-
-  async function notifyTelegramStreak(streakCount, exerciseName) {
-    if (!tgSettings.sendStreaks || !tgSettings.chatId) return;
-    if (streakCount !== 5 && streakCount !== 10 && streakCount !== 20 && streakCount !== 50) return;
-
-    const text =
-      `🔥 <b>Отличный результат в «Ладно · Фортепиано»!</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `🎯 <b>Раздел:</b> ${exerciseName}\n` +
-      `⚡ <b>Серия:</b> <b>${streakCount}</b> правильных ответов подряд!\n` +
-      `Пальцы и слух работают слаженно. Так держать! 🎹✨`;
-
-    await sendTelegramMessage(text);
-  }
-
-  async function sendTelegramSessionSummary() {
-    if (!tgSettings.chatId) {
-      alert("Сначала подключите Telegram и укажите Chat ID!");
+        toneSynth.triggerAttackRelease(
+          notes,
+          event.duration,
+          start + (event.time || 0),
+          event.velocity || 0.7,
+        );
+      });
       return;
-    }
-
-    const accuracy = state.totalAnswered > 0 ? Math.round((state.totalCorrect / state.totalAnswered) * 100) : 0;
-    const dateStr = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-
-    let exerciseBreakdown = "";
-    for (const [name, s] of Object.entries(state.statsByExercise)) {
-      const p = s.answered > 0 ? Math.round((s.correct / s.answered) * 100) : 0;
-      exerciseBreakdown += `• <b>${name}:</b> ${s.correct}/${s.answered} (${p}%)\n`;
-    }
-
-    if (!exerciseBreakdown) {
-      exerciseBreakdown = "• Пока выполнено мало заданий в текущей сессии.\n";
-    }
-
-    const text =
-      `📊 <b>Сводка тренировки · Ладно Фортепиано</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📅 <b>Дата:</b> ${dateStr}\n` +
-      `🎯 <b>Всего упражнений:</b> ${state.totalAnswered}\n` +
-      `✅ <b>Правильно:</b> ${state.totalCorrect} (${accuracy}%)\n` +
-      `❌ <b>Ошибок:</b> ${state.totalErrors}\n` +
-      `⚡ <b>Лучшая серия:</b> ${state.bestStreak} подряд\n\n` +
-      `🔍 <b>Результаты по разделам:</b>\n${exerciseBreakdown}\n` +
-      `🎹 <i>«Музыка начинает жить там, где кончаются сомнения». Продолжай заниматься регулярно!</i>`;
-
-    const res = await sendTelegramMessage(text);
-    if (res.success) {
-      alert("✅ Итоговая сводка тренировки успешно отправлена тебе в Telegram!");
-    } else {
-      alert("Не удалось отправить сводку: " + (res.reason || "проверьте настройки"));
+    } catch (error) {
+      console.warn("Tone.js недоступен, используем Web Audio.", error);
     }
   }
-
-  /* ------------------------------------------------------------------------
-     5. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ НОТ
-     ------------------------------------------------------------------------ */
-  function midiToNote(midi) {
-    const pc = ((midi % 12) + 12) % 12;
-    const octave = Math.floor(midi / 12) - 1;
-    return {
-      midi: midi,
-      pc: pc,
-      octave: octave,
-      name: NOTE_NAMES[pc] + octave,
-      letter: NOTE_NAMES[pc],
-      doremi: NOTE_RU[pc],
-      isBlack: [1, 3, 6, 8, 10].includes(pc)
-    };
-  }
-
-  function getNoteLabel(note) {
-    if (state.labelMode === "none") return "";
-    if (state.labelMode === "letters") return note.letter;
-    return note.doremi;
-  }
-
-  function escapeHtml(str) {
-    if (!str) return "";
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  /* ------------------------------------------------------------------------
-     6. ГЕНЕРАТОР КЛАВИАТУРЫ ФОРТЕПИАНО (Interactive Piano)
-     ------------------------------------------------------------------------ */
-  function renderPianoKeyboard(containerId, options = {}) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const startMidi = options.startMidi || 48; // C3
-    const endMidi = options.endMidi || 72; // C5
-    const onKeyClick = options.onClick || null;
-    const showShortcuts = options.showShortcuts !== undefined ? options.showShortcuts : state.showShortcuts;
-    const fingerMap = options.fingers || {};
-
-    container.innerHTML = "";
-
-    const notes = [];
-    for (let m = startMidi; m <= endMidi; m++) {
-      notes.push(midiToNote(m));
-    }
-
-    const whiteNotes = notes.filter((n) => !n.isBlack);
-    const totalWhite = whiteNotes.length;
-
-    whiteNotes.forEach((note, whiteIndex) => {
-      const keyEl = document.createElement("div");
-      keyEl.className = "piano-key white";
-      keyEl.dataset.midi = note.midi;
-      keyEl.dataset.whiteIndex = whiteIndex;
-
-      let inner = `<span class="key-note">${getNoteLabel(note)}</span>`;
-      inner += `<span class="key-octave">${note.octave}</span>`;
-
-      if (showShortcuts && SHORTCUT_LABELS[note.midi]) {
-        inner += `<span class="key-shortcut">${SHORTCUT_LABELS[note.midi]}</span>`;
-      }
-      if (fingerMap[note.midi]) {
-        inner += `<span class="key-finger">${fingerMap[note.midi]}</span>`;
-      }
-
-      keyEl.innerHTML = inner;
-
-      keyEl.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        triggerKey(note.midi, keyEl, onKeyClick);
-      });
-      keyEl.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        triggerKey(note.midi, keyEl, onKeyClick);
-      });
-
-      container.appendChild(keyEl);
-    });
-
-    const blackNotes = notes.filter((n) => n.isBlack);
-    blackNotes.forEach((note) => {
-      const keyEl = document.createElement("div");
-      keyEl.className = "piano-key black";
-      keyEl.dataset.midi = note.midi;
-
-      const prevWhite = whiteNotes.findIndex((w) => w.midi === note.midi - 1);
-      if (prevWhite !== -1) {
-        const pctLeft = ((prevWhite + 0.68) / totalWhite) * 100;
-        keyEl.style.left = `${pctLeft}%`;
-      }
-
-      let inner = `<span class="key-note">${getNoteLabel(note)}</span>`;
-      if (showShortcuts && SHORTCUT_LABELS[note.midi]) {
-        inner += `<span class="key-shortcut">${SHORTCUT_LABELS[note.midi]}</span>`;
-      }
-      if (fingerMap[note.midi]) {
-        inner += `<span class="key-finger">${fingerMap[note.midi]}</span>`;
-      }
-
-      keyEl.innerHTML = inner;
-
-      keyEl.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        triggerKey(note.midi, keyEl, onKeyClick);
-      });
-      keyEl.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        triggerKey(note.midi, keyEl, onKeyClick);
-      });
-
-      container.appendChild(keyEl);
-    });
-  }
-
-  function triggerKey(midi, keyEl, customCallback) {
-    playMidi(midi, 1.1, 0.85);
-
-    if (keyEl) {
-      keyEl.classList.add("active");
-      setTimeout(() => keyEl.classList.remove("active"), 180);
-    }
-
-    updateLiveStaff(midi);
-
-    const note = midiToNote(midi);
-    const statusEl = document.getElementById("notes-status");
-    if (statusEl) {
-      statusEl.textContent = `Звучит: ${note.doremi} (${note.name}) • ${note.octave}-я октава`;
-    }
-
-    if (customCallback) {
-      customCallback(midi, note, keyEl);
-    }
-  }
-
-  function updateLiveStaff(midi) {
-    const activeSection = location.hash.slice(1) || "notes";
-    if (activeSection === "sightreading") {
-      renderGrandStaffSvg("staff-display", [midi]);
-      const cap = document.getElementById("staff-note-name");
-      if (cap) {
-        const n = midiToNote(midi);
-        cap.textContent = `Нота: ${n.doremi} (${n.name}) — ${n.octave} октава`;
-      }
-    } else if (activeSection === "play") {
-      renderGrandStaffSvg("freelab-staff-display", [midi]);
-      const cap = document.getElementById("freelab-caption");
-      if (cap) {
-        const n = midiToNote(midi);
-        cap.textContent = `Сыграно: ${n.doremi} (${n.name})`;
-      }
-    }
-  }
-
-  /* ------------------------------------------------------------------------
-     7. РЕНДЕРЕР НОТНОГО СТАНА GRAND STAFF (SVG)
-     ------------------------------------------------------------------------ */
-  function renderGrandStaffSvg(containerId, midis = [], options = {}) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const width = options.width || 680;
-    const height = options.height || 260;
-    const showClef = options.clef || "both";
-
-    let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="display:block; width:100%; height:auto;">`;
-    svg += `<rect width="${width}" height="${height}" fill="#fffdfa" rx="8" />`;
-
-    if (showClef === "both") {
-      svg += `
-        <line x1="38" y1="45" x2="38" y2="213" stroke="#26382f" stroke-width="2.5" />
-        <path d="M 38 45 C 26 80, 24 110, 16 129 C 24 148, 26 178, 38 213" fill="none" stroke="#26382f" stroke-width="2.5" stroke-linecap="round" />
-      `;
-    }
-
-    if (showClef === "both" || showClef === "treble") {
-      for (let i = 0; i < 5; i++) {
-        const y = 45 + i * 12;
-        svg += `<line x1="40" y1="${y}" x2="${width - 25}" y2="${y}" stroke="#788b7d" stroke-width="1.2" />`;
-      }
-      svg += `<text x="46" y="94" font-family="serif" font-size="52" fill="#26382f">𝄞</text>`;
-    }
-
-    if (showClef === "both" || showClef === "bass") {
-      for (let i = 0; i < 5; i++) {
-        const y = 165 + i * 12;
-        svg += `<line x1="40" y1="${y}" x2="${width - 25}" y2="${y}" stroke="#788b7d" stroke-width="1.2" />`;
-      }
-      svg += `<text x="48" y="196" font-family="serif" font-size="44" fill="#26382f">𝄢</text>`;
-    }
-
-    function getYForMidi(midi) {
-      const diatonicMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
-      const pc = ((midi % 12) + 12) % 12;
-      const octave = Math.floor(midi / 12) - 1;
-      const diatonicStepFromC4 = (octave - 4) * 7 + diatonicMap[pc];
-      return 129 - diatonicStepFromC4 * 6;
-    }
-
-    const noteArray = Array.isArray(midis) ? midis : [midis];
-    const totalNotes = noteArray.length;
-    const startX = totalNotes > 1 ? 160 : 340;
-    const spacingX = totalNotes > 1 ? Math.min(75, (width - 220) / totalNotes) : 0;
-
-    noteArray.forEach((midi, idx) => {
-      if (typeof midi !== "number") return;
-      const y = getYForMidi(midi);
-      const x = totalNotes > 1 ? startX + idx * spacingX : startX;
-      const note = midiToNote(midi);
-
-      if (Math.abs(y - 129) < 2) {
-        svg += `<line x1="${x - 16}" y1="129" x2="${x + 16}" y2="129" stroke="#376b53" stroke-width="1.6" />`;
-      }
-      for (let ly = 33; ly >= y - 1; ly -= 12) {
-        svg += `<line x1="${x - 14}" y1="${ly}" x2="${x + 14}" y2="${ly}" stroke="#376b53" stroke-width="1.4" />`;
-      }
-      for (let ly = 225; ly <= y + 1; ly -= 12) {
-        svg += `<line x1="${x - 14}" y1="${ly}" x2="${x + 14}" y2="${ly}" stroke="#376b53" stroke-width="1.4" />`;
-      }
-
-      if (note.isBlack) {
-        svg += `<text x="${x - 22}" y="${y + 5}" font-family="serif" font-size="20" fill="#376b53" font-weight="bold">♯</text>`;
-      }
-
-      svg += `<ellipse cx="${x}" cy="${y}" rx="8.5" ry="6" fill="#244f3d" transform="rotate(-20 ${x} ${y})" />`;
-
-      if (y > 120) {
-        svg += `<line x1="${x + 7.5}" y1="${y}" x2="${x + 7.5}" y2="${y - 36}" stroke="#244f3d" stroke-width="1.8" />`;
-      } else {
-        svg += `<line x1="${x - 7.5}" y1="${y}" x2="${x - 7.5}" y2="${y + 36}" stroke="#244f3d" stroke-width="1.8" />`;
-      }
-    });
-
-    svg += `</svg>`;
-    container.innerHTML = svg;
-  }
-
-  /* ------------------------------------------------------------------------
-     8. ТРЕНИРОВКА РИТМА: МЕТРОНОМ И ТАП-ТРЕНАЖЁР
-     ------------------------------------------------------------------------ */
-  let metronomeTimer = null;
-  let bpm = 90;
-  let meter = 4;
-  let currentBeat = 0;
-  let isMetronomeRunning = false;
-  let nextBeatTime = 0;
-
-  let tapStats = {
-    totalTaps: 0,
-    perfectHits: 0,
-    goodHits: 0,
-    offsets: [],
-    challengeActive: false,
-    challengeTaps: 0,
-    pattern: "quarters"
-  };
-
-  function playMetronomeClick(isAccent = false) {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(isAccent ? 1200 : 800, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(isAccent ? 0.45 : 0.25, now + 0.002);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.06);
-  }
-
-  function startMetronome() {
-    getAudioContext();
-    isMetronomeRunning = true;
-    currentBeat = 0;
-    const intervalMs = (60 / bpm) * 1000;
-
-    const toggleBtn = document.getElementById("metronome-toggle-btn");
-    if (toggleBtn) {
-      toggleBtn.textContent = "⏹ Остановить метроном";
-      toggleBtn.classList.add("button-accent");
-    }
-
-    function tick() {
-      if (!isMetronomeRunning) return;
-      currentBeat = (currentBeat % meter) + 1;
-      const isAccent = currentBeat === 1;
-      playMetronomeClick(isAccent);
-      highlightMeterDot(currentBeat);
-      nextBeatTime = Date.now() + intervalMs;
-      metronomeTimer = setTimeout(tick, intervalMs);
-    }
-
-    tick();
-  }
-
-  function stopMetronome() {
-    isMetronomeRunning = false;
-    clearTimeout(metronomeTimer);
-    const toggleBtn = document.getElementById("metronome-toggle-btn");
-    if (toggleBtn) {
-      toggleBtn.textContent = "▶ Запустить метроном";
-      toggleBtn.classList.remove("button-accent");
-    }
-    clearMeterDots();
-  }
-
-  function highlightMeterDot(beat) {
-    const dots = document.querySelectorAll(".meter-dot");
-    dots.forEach((dot, idx) => {
-      dot.classList.toggle("active", idx + 1 === beat);
-    });
-  }
-
-  function clearMeterDots() {
-    const dots = document.querySelectorAll(".meter-dot");
-    dots.forEach((dot) => dot.classList.remove("active"));
-  }
-
-  function handleUserTap() {
-    getAudioContext();
-    const tapBtn = document.getElementById("tap-btn");
-    if (tapBtn) {
-      tapBtn.classList.add("pulse");
-      setTimeout(() => tapBtn.classList.remove("pulse"), 120);
-    }
-
-    if (!isMetronomeRunning) {
-      startMetronome();
-    }
-
-    const intervalMs = (60 / bpm) * 1000;
-    const now = Date.now();
-    const diffToNext = nextBeatTime - now;
-    const diffToPrev = now - (nextBeatTime - intervalMs);
-    let offsetMs = Math.abs(diffToNext) < Math.abs(diffToPrev) ? -diffToNext : diffToPrev;
-
-    if (offsetMs > intervalMs / 2) offsetMs = offsetMs - intervalMs;
-    if (offsetMs < -intervalMs / 2) offsetMs = offsetMs + intervalMs;
-
-    tapStats.totalTaps++;
-    tapStats.offsets.push(offsetMs);
-
-    const absOff = Math.abs(offsetMs);
-    let grade = "Идеально!";
-    let markerClass = "perfect";
-
-    if (absOff <= 25) {
-      grade = "Идеально! ✦";
-      markerClass = "perfect";
-      tapStats.perfectHits++;
-    } else if (absOff <= 55) {
-      grade = "Отлично";
-      markerClass = "good";
-      tapStats.goodHits++;
-    } else if (offsetMs < 0) {
-      grade = `Раньше на ${Math.round(absOff)} мс`;
-      markerClass = "early";
-    } else {
-      grade = `Позже на ${Math.round(absOff)} мс`;
-      markerClass = "late";
-    }
-
-    const marker = document.getElementById("rhythm-marker");
-    if (marker) {
-      marker.style.display = "block";
-      marker.className = `rhythm-hit-marker ${markerClass}`;
-      const pctOffset = Math.max(-45, Math.min(45, (offsetMs / 200) * 45));
-      marker.style.left = `${50 + pctOffset}%`;
-    }
-
-    const accuracyPct = Math.round(((tapStats.perfectHits + tapStats.goodHits * 0.7) / tapStats.totalTaps) * 100);
-    const accEl = document.getElementById("rhythm-accuracy");
-    if (accEl) accEl.textContent = `${accuracyPct}%`;
-    const offEl = document.getElementById("rhythm-offset");
-    if (offEl) offEl.textContent = `${offsetMs >= 0 ? "+" : ""}${Math.round(offsetMs)} мс`;
-    const cntEl = document.getElementById("rhythm-tap-count");
-    if (cntEl) cntEl.textContent = tapStats.totalTaps;
-    const grdEl = document.getElementById("rhythm-grade");
-    if (grdEl) grdEl.textContent = grade;
-
-    // Проверка выполнения ритмического упражнения
-    if (tapStats.challengeActive) {
-      tapStats.challengeTaps++;
-      const fb = document.getElementById("rhythm-challenge-feedback");
-      if (fb) {
-        fb.textContent = `Тап ${tapStats.challengeTaps} из 8... (${grade})`;
-      }
-      if (tapStats.challengeTaps >= 8) {
-        finishRhythmChallenge(accuracyPct);
-      }
-    }
-  }
-
-  async function finishRhythmChallenge(accuracy) {
-    tapStats.challengeActive = false;
-    const fb = document.getElementById("rhythm-challenge-feedback");
-    const passed = accuracy >= 75;
-
-    const patternEl = document.getElementById("rhythm-pattern-select");
-    const patternName = patternEl ? patternEl.options[patternEl.selectedIndex].text : "Четверти";
-    const sumOffsets = tapStats.offsets.reduce((acc, v) => acc + Math.abs(v), 0);
-    const avgOff = tapStats.offsets.length ? Math.round(sumOffsets / tapStats.offsets.length) : 20;
-
-    if (passed) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `🎉 Отлично! Ритмическое упражнение «${patternName}» успешно выполнено с точностью ${accuracy}%! Отчёт отправлен в Telegram.`;
-      }
-      registerAnswerSuccess(
-        "Тренировка ритма",
-        `Ритмический паттерн «${patternName}» (${bpm} BPM)`,
-        `Точность: ${accuracy}%, среднее отклонение: ±${avgOff} мс`
-      );
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Слишком большая погрешность: точность ${accuracy}% (ср. отклонение ±${avgOff} мс). Ошибка отправлена в Telegram!`;
-      }
-      registerAnswerError(
-        "Тренировка ритма",
-        `Ритмический паттерн «${patternName}» (${bpm} BPM)`,
-        `Точность ${accuracy}% (отклонение ±${avgOff} мс)`,
-        "Точность от 75% и выше",
-        "Ориентируйся на звонкий щелчок первой доли метронома и считай пульс вслух: «Раз-и, Два-и»."
-      );
-    }
-  }
-
-  /* ------------------------------------------------------------------------
-     9. ОБРАБОТКА РЕЗУЛЬТАТОВ И ОБНОВЛЕНИЕ СТАТИСТИКИ
-     ------------------------------------------------------------------------ */
-  function registerAnswerSuccess(exerciseName, taskDescription = "", details = "") {
-    state.totalAnswered++;
-    state.totalCorrect++;
-    state.currentStreak++;
-    if (state.currentStreak > state.bestStreak) {
-      state.bestStreak = state.currentStreak;
-    }
-
-    if (!state.statsByExercise[exerciseName]) {
-      state.statsByExercise[exerciseName] = { answered: 0, correct: 0, errors: 0 };
-    }
-    state.statsByExercise[exerciseName].answered++;
-    state.statsByExercise[exerciseName].correct++;
-
-    updateGlobalStatsUI();
-    saveState();
-
-    // Отправляем в Telegram сообщение о том, какое упражнение выполнено!
-    notifyTelegramExerciseDone(exerciseName, taskDescription, details);
-
-    // Проверяем серии
-    if (state.currentStreak === 5 || state.currentStreak === 10 || state.currentStreak === 20) {
-      notifyTelegramStreak(state.currentStreak, exerciseName);
-    }
-  }
-
-  function registerAnswerError(exerciseName, questionText, userAnswer, correctAnswer, explanation) {
-    state.totalAnswered++;
-    state.totalErrors++;
-    state.currentStreak = 0;
-
-    if (!state.statsByExercise[exerciseName]) {
-      state.statsByExercise[exerciseName] = { answered: 0, correct: 0, errors: 0 };
-    }
-    state.statsByExercise[exerciseName].answered++;
-    state.statsByExercise[exerciseName].errors++;
-
-    updateGlobalStatsUI();
-    saveState();
-
-    // Отправляем в Telegram сообщение об ошибке с разбором!
-    notifyTelegramError(exerciseName, questionText, userAnswer, correctAnswer, explanation);
-  }
-
-  function updateGlobalStatsUI() {
-    const streakEl = document.getElementById("top-streak");
-    if (streakEl) streakEl.textContent = state.currentStreak;
-  }
-
-  /* ------------------------------------------------------------------------
-     10. УПРАЖНЕНИЕ 01: НАЙДИ НОТУ НА ПИАНИНО
-     ------------------------------------------------------------------------ */
-  let notesQuizTarget = null;
-
-  function initNotesQuiz() {
-    renderPianoKeyboard("notes-quiz-piano", {
-      startMidi: 60,
-      endMidi: 72,
-      showShortcuts: true,
-      onClick: handleNotesQuizKeyClick
-    });
-    nextNotesQuiz();
-  }
-
-  function nextNotesQuiz() {
-    const midi = 60 + Math.floor(Math.random() * 13);
-    notesQuizTarget = midiToNote(midi);
-
-    const promptEl = document.getElementById("notes-quiz-prompt");
-    if (promptEl) {
-      promptEl.textContent = `Задание: Найди на клавишах ноту ${notesQuizTarget.doremi} (${notesQuizTarget.name})`;
-    }
-    const fb = document.getElementById("notes-feedback");
-    if (fb) {
-      fb.className = "feedback";
-      fb.textContent = "Нажми нужную клавишу на пианино выше.";
-    }
-
-    const keys = document.querySelectorAll("#notes-quiz-piano .piano-key");
-    keys.forEach((k) => k.classList.remove("quiz-correct", "quiz-wrong", "quiz-highlight"));
-  }
-
-  function handleNotesQuizKeyClick(midi, note) {
-    if (!notesQuizTarget) return;
-
-    const fb = document.getElementById("notes-feedback");
-    const clickedKey = document.querySelector(`#notes-quiz-piano .piano-key[data-midi="${midi}"]`);
-    const correctKey = document.querySelector(`#notes-quiz-piano .piano-key[data-midi="${notesQuizTarget.midi}"]`);
-
-    if (midi === notesQuizTarget.midi) {
-      if (clickedKey) clickedKey.classList.add("quiz-correct");
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `🎉 Точно! Это ${note.doremi} (${note.name}). Серия растёт!`;
-      }
-      registerAnswerSuccess(
-        "Ноты и клавиши",
-        `Поиск ноты ${notesQuizTarget.doremi} (${notesQuizTarget.name})`,
-        `Клавиша ${note.doremi} найдена безошибочно!`
-      );
-      updateNotesStatsUI();
-      setTimeout(nextNotesQuiz, 1400);
-    } else {
-      if (clickedKey) clickedKey.classList.add("quiz-wrong");
-      if (correctKey) correctKey.classList.add("quiz-correct");
-      const explanation = `Нота ${notesQuizTarget.doremi} (${notesQuizTarget.name}) расположена ${
-        notesQuizTarget.isBlack ? "на чёрной клавише" : "на белой клавише"
-      }. Ориентир: нота До (C) всегда находится слева от двух чёрных клавиш.`;
-
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка: ты нажал ${note.doremi} (${note.name}), а требовалась ${notesQuizTarget.doremi} (${notesQuizTarget.name}). Отчёт отправлен в Telegram!`;
-      }
-
-      registerAnswerError(
-        "Ноты и клавиши",
-        `Найди ноту ${notesQuizTarget.doremi} (${notesQuizTarget.name})`,
-        `${note.doremi} (${note.name})`,
-        `${notesQuizTarget.doremi} (${notesQuizTarget.name})`,
-        explanation
-      );
-      updateNotesStatsUI();
-    }
-  }
-
-  function updateNotesStatsUI() {
-    const s = state.statsByExercise["Ноты и клавиши"] || { answered: 0, correct: 0 };
-    const el = document.getElementById("notes-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Всего: ${s.answered}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     11. УПРАЖНЕНИЕ 02: ЧТЕНИЕ НОТ С ЛИСТА (Grand Staff)
-     ------------------------------------------------------------------------ */
-  let sightTarget = null;
-
-  function initSightReadingQuiz() {
-    renderPianoKeyboard("sightreading-quiz-piano", {
-      startMidi: 48,
-      endMidi: 72,
-      showShortcuts: true,
-      onClick: handleSightKeyClick
-    });
-    nextSightReadingQuiz();
-  }
-
-  function nextSightReadingQuiz() {
-    const clefMode = document.getElementById("quiz-clef-select")?.value || "treble";
-    const accMode = document.getElementById("quiz-accidentals-select")?.value || "natural";
-
-    let pool = [];
-    if (clefMode === "treble") {
-      pool = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79];
-    } else if (clefMode === "bass") {
-      pool = [43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60];
-    } else {
-      pool = [48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72];
-    }
-
-    if (accMode === "accidentals") {
-      pool = pool.concat([61, 63, 66, 68, 70, 51, 54, 56]);
-    }
-
-    const midi = pool[Math.floor(Math.random() * pool.length)];
-    sightTarget = midiToNote(midi);
-
-    renderGrandStaffSvg("quiz-staff-display", [sightTarget.midi], { clef: clefMode });
-
-    const answersContainer = document.getElementById("sightreading-answers");
-    if (answersContainer) {
-      answersContainer.innerHTML = "";
-      const options = [sightTarget];
-      while (options.length < 4) {
-        const randMidi = pool[Math.floor(Math.random() * pool.length)];
-        const candidate = midiToNote(randMidi);
-        if (!options.some((o) => o.name === candidate.name)) {
-          options.push(candidate);
-        }
-      }
-      options.sort(() => Math.random() - 0.5);
-
-      options.forEach((opt) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "answer";
-        btn.textContent = `${opt.doremi} (${opt.name})`;
-        btn.addEventListener("click", () => handleSightAnswer(opt));
-        answersContainer.appendChild(btn);
-      });
-    }
-
-    const fb = document.getElementById("sightreading-feedback");
-    if (fb) {
-      fb.className = "feedback";
-      fb.textContent = "Какая нота нарисована на стане? Сыграй клавишу или нажми кнопку.";
-    }
-  }
-
-  function handleSightKeyClick(midi, note) {
-    if (!sightTarget) return;
-    handleSightAnswer(note);
-  }
-
-  function handleSightAnswer(chosenNote) {
-    if (!sightTarget) return;
-
-    const fb = document.getElementById("sightreading-feedback");
-    const isCorrect = chosenNote.midi === sightTarget.midi || chosenNote.name === sightTarget.name;
-    const clefMode = document.getElementById("quiz-clef-select")?.value || "treble";
-    const clefName = clefMode === "treble" ? "Скрипичный ключ" : clefMode === "bass" ? "Басовый ключ" : "Оба ключа";
-
-    const btns = document.querySelectorAll("#sightreading-answers .answer");
-    btns.forEach((b) => {
-      b.disabled = true;
-      if (b.textContent.includes(sightTarget.name)) b.classList.add("correct");
-      if (!isCorrect && b.textContent.includes(chosenNote.name)) b.classList.add("wrong");
-    });
-
-    if (isCorrect) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `Верно! Это нота ${sightTarget.doremi} (${sightTarget.name}). Прекрасное чтение с листа!`;
-      }
-      registerAnswerSuccess(
-        "Чтение нот с листа",
-        `Нота на стане (${clefName})`,
-        `Нота ${sightTarget.doremi} (${sightTarget.name}) прочитана безошибочно!`
-      );
-      updateSightStatsUI();
-      setTimeout(nextSightReadingQuiz, 1400);
-    } else {
-      let advice = "";
-      if (sightTarget.midi < 60) {
-        advice = `В басовом ключе ориентир — 4-я линейка снизу (нота Фа/F3 между двумя точками). Нота ${sightTarget.doremi} относится к ${sightTarget.octave}-й октаве.`;
-      } else {
-        advice = `В скрипичном ключе ориентир — 2-я линейка снизу (нота Соль/G4, где начинается завиток). Нота ${sightTarget.doremi} относится к ${sightTarget.octave}-й октаве.`;
-      }
-
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка: выбран ответ ${chosenNote.doremi} (${chosenNote.name}), правильный — ${sightTarget.doremi} (${sightTarget.name}). Разбор отправлен в Telegram!`;
-      }
-
-      registerAnswerError(
-        "Чтение нот с листа",
-        `Чтение ноты на стане (${clefName})`,
-        `${chosenNote.doremi} (${chosenNote.name})`,
-        `${sightTarget.doremi} (${sightTarget.name})`,
-        advice
-      );
-      updateSightStatsUI();
-    }
-  }
-
-  function updateSightStatsUI() {
-    const s = state.statsByExercise["Чтение нот с листа"] || { answered: 0, errors: 0 };
-    const el = document.getElementById("sightreading-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Ошибок: ${s.errors}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     12. УПРАЖНЕНИЕ 03: ИНТЕРВАЛЫ НА СЛУХ
-     ------------------------------------------------------------------------ */
-  let intervalTarget = null;
-  let intervalRootMidi = 60;
-
-  function nextIntervalQuiz() {
-    const rand = INTERVALS[Math.floor(Math.random() * INTERVALS.length)];
-    intervalRootMidi = 60 + Math.floor(Math.random() * 5);
-    intervalTarget = rand;
-
-    playIntervalSound(intervalRootMidi, intervalTarget.semitones, "up");
-
-    const hint = document.getElementById("intervals-quiz-hint");
-    if (hint) hint.textContent = "Интервал прозвучал. Выбери его название:";
-
-    const ansContainer = document.getElementById("intervals-answers");
-    if (ansContainer) {
-      ansContainer.innerHTML = "";
-      const choices = [intervalTarget];
-      while (choices.length < 4) {
-        const c = INTERVALS[Math.floor(Math.random() * INTERVALS.length)];
-        if (!choices.some((item) => item.id === c.id)) choices.push(c);
-      }
-      choices.sort(() => Math.random() - 0.5);
-
-      choices.forEach((item) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "answer";
-        btn.textContent = item.name;
-        btn.addEventListener("click", () => handleIntervalAnswer(item));
-        ansContainer.appendChild(btn);
-      });
-    }
-
-    const fb = document.getElementById("intervals-feedback");
-    if (fb) {
-      fb.className = "feedback";
-      fb.textContent = "Послушай и определи интервал.";
-    }
-  }
-
-  function playIntervalSound(rootMidi, semitones, mode = "up") {
-    if (mode === "harmonic") {
-      playChordMidi([rootMidi, rootMidi + semitones], 1.6);
-    } else if (mode === "down") {
-      playPianoTone(rootMidi + semitones, 0.9, 0.8);
-      setTimeout(() => playPianoTone(rootMidi, 1.2, 0.8), 500);
-    } else {
-      playPianoTone(rootMidi, 0.9, 0.8);
-      setTimeout(() => playPianoTone(rootMidi + semitones, 1.2, 0.8), 500);
-    }
-  }
-
-  function handleIntervalAnswer(chosen) {
-    if (!intervalTarget) return;
-
-    const fb = document.getElementById("intervals-feedback");
-    const isCorrect = chosen.id === intervalTarget.id;
-
-    const btns = document.querySelectorAll("#intervals-answers .answer");
-    btns.forEach((b) => {
-      b.disabled = true;
-      if (b.textContent === intervalTarget.name) b.classList.add("correct");
-      if (!isCorrect && b.textContent === chosen.name) b.classList.add("wrong");
-    });
-
-    if (isCorrect) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `🎯 Браво! Это ${intervalTarget.name} (${intervalTarget.semitones} полут.). Ассоциация: ${intervalTarget.song}.`;
-      }
-      registerAnswerSuccess(
-        "Интервалы на слух",
-        `Определение интервала ${intervalTarget.name}`,
-        `Угадан интервал ${intervalTarget.name} (${intervalTarget.semitones} полутонов, ${intervalTarget.song})`
-      );
-      updateIntervalStatsUI();
-      setTimeout(nextIntervalQuiz, 1600);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Неверно: выбран интервал «${chosen.name}», а звучал «${intervalTarget.name}» (${intervalTarget.song}). Ошибка отправлена в Telegram!`;
-      }
-
-      registerAnswerError(
-        "Интервалы на слух",
-        "Определи интервал по слуху",
-        chosen.name,
-        intervalTarget.name,
-        `Интервал ${intervalTarget.name} равен ${intervalTarget.semitones} полутонам. Слуховой якорь для запоминания: ${intervalTarget.song}.`
-      );
-      updateIntervalStatsUI();
-    }
-  }
-
-  function updateIntervalStatsUI() {
-    const s = state.statsByExercise["Интервалы на слух"] || { answered: 0, errors: 0 };
-    const el = document.getElementById("intervals-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Ошибок: ${s.errors}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     13. УПРАЖНЕНИЕ 04: ЗАПОМИНАНИЕ АККОРДОВ (3 РЕЖИМА)
-     ------------------------------------------------------------------------ */
-  let chordQuizMode = "build"; // 'build', 'spelling', 'ear'
-  let chordTargetItem = null;
-  let chordSelectedKeys = new Set(); // MIDI ноты при сборке
-
-  function initChordQuiz() {
-    // Клавиатура для сборки аккордов
-    renderPianoKeyboard("chord-quiz-piano", {
-      startMidi: 60, // C4
-      endMidi: 76, // E5
-      showShortcuts: true,
-      onClick: handleChordBuildKeyClick
-    });
-
-    document.querySelectorAll("[data-chord-quiz-mode]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-chord-quiz-mode]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        chordQuizMode = btn.dataset.chordQuizMode;
-
-        const buildBox = document.getElementById("chord-quiz-build-box");
-        const otherBox = document.getElementById("chord-quiz-other-box");
-        if (buildBox) buildBox.style.display = chordQuizMode === "build" ? "block" : "none";
-        if (otherBox) otherBox.style.display = chordQuizMode !== "build" ? "block" : "none";
-
-        nextChordQuiz();
+  try {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) throw new Error("Web Audio не поддерживается");
+    nativeAudio = nativeAudio || new Audio();
+    await nativeAudio.resume();
+    const start = nativeAudio.currentTime + 0.04;
+    events.forEach((event) => {
+      const notes = unique(event.notes);
+      notes.forEach((midi) => {
+        const oscillator = nativeAudio.createOscillator();
+        const gain = nativeAudio.createGain();
+        const at = start + (event.time || 0);
+        const end = at + event.duration;
+        oscillator.type = "triangle";
+        oscillator.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+        const volume =
+          (0.16 * (event.velocity || 0.7)) / Math.sqrt(notes.length);
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.exponentialRampToValueAtTime(volume, at + 0.02);
+        gain.gain.exponentialRampToValueAtTime(
+          Math.max(0.0002, volume * 0.45),
+          Math.max(at + 0.03, end),
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, end + 0.25);
+        oscillator.connect(gain);
+        gain.connect(nativeAudio.destination);
+        oscillator.start(at);
+        oscillator.stop(end + 0.26);
       });
     });
-
-    document.getElementById("chord-build-reset-btn")?.addEventListener("click", resetChordBuildSelection);
-
-    nextChordQuiz();
+    byId("audio-status").textContent = "Звук браузера";
+  } catch (error) {
+    byId("audio-status").textContent = "Звук недоступен";
+    console.warn("Не удалось воспроизвести звук.", error);
   }
+}
+function playNote(midi) {
+  playEvents([{ notes: [midi], duration: 0.55, velocity: 0.7 }]);
+}
+function playChord(notes) {
+  playEvents([
+    { notes: notes.map((note) => note.midi), duration: 1.5, velocity: 0.7 },
+  ]);
+}
+function playInterval(a, b, mode) {
+  playEvents(
+    mode === "together"
+      ? [{ notes: [a, b], duration: 1.25, velocity: 0.7 }]
+      : [
+          { notes: [a], duration: 0.7, time: 0 },
+          { notes: [b], duration: 0.9, time: 0.8 },
+        ],
+  );
+}
 
-  function resetChordBuildSelection() {
-    chordSelectedKeys.clear();
-    const keys = document.querySelectorAll("#chord-quiz-piano .piano-key");
-    keys.forEach((k) => k.classList.remove("quiz-correct", "quiz-wrong", "quiz-highlight"));
-    updateChordBuildCount();
-  }
-
-  function updateChordBuildCount() {
-    const el = document.getElementById("chord-build-selected-notes");
-    if (el) {
-      el.textContent = `Нажато нот: ${chordSelectedKeys.size} из 3`;
-    }
-  }
-
-  function nextChordQuiz() {
-    chordTargetItem = MEMORIZE_CHORDS[Math.floor(Math.random() * MEMORIZE_CHORDS.length)];
-    resetChordBuildSelection();
-
-    const ansContainer = document.getElementById("chords-answers");
-    const fb = document.getElementById("chords-feedback");
-    const caption = document.getElementById("chords-answers-caption");
-
-    if (chordQuizMode === "build") {
-      // Режим 1: Сборка на клавиатуре
-      if (caption) caption.textContent = "ИЛИ ВЫБЕРИ БУКВЕННОЕ ОБОЗНАЧЕНИЕ";
-      const promptEl = document.getElementById("chord-quiz-build-prompt");
-      if (promptEl) {
-        promptEl.textContent = `Задание: Собери аккорд ${chordTargetItem.name} — нажми 3 клавиши (${chordTargetItem.ruNotes.join(" - ")})!`;
-      }
-      if (fb) {
-        fb.className = "feedback";
-        fb.textContent = `Нажми на пианино 3 ноты трезвучия ${chordTargetItem.name}.`;
-      }
-      renderChordSpellingAnswers();
-    } else if (chordQuizMode === "spelling") {
-      // Режим 2: Запоминание нотного состава
-      if (caption) caption.textContent = "ИЗ КАКИХ НОТ СОСТОИТ АККОРД?";
-      if (fb) {
-        fb.className = "feedback";
-        fb.textContent = `Из каких трёх нот состоит аккорд ${chordTargetItem.name}?`;
-      }
-      renderChordSpellingAnswers();
-    } else {
-      // Режим 3: На слух
-      if (caption) caption.textContent = "ВЫБЕРИ ТИП АККОРДА";
-      if (fb) {
-        fb.className = "feedback";
-        fb.textContent = "Послушай аккорд и выбери его тип.";
-      }
-      playCurrentChordSound();
-      renderChordEarAnswers();
-    }
-  }
-
-  function playCurrentChordSound() {
-    if (!chordTargetItem) return;
-    const baseMidi = 60 + chordTargetItem.rootPc;
-    const midis = chordTargetItem.offsets.map((o) => baseMidi + o);
-    playChordMidi(midis, 1.8);
-  }
-
-  function handleChordBuildKeyClick(midi, note, keyEl) {
-    if (chordQuizMode !== "build" || !chordTargetItem) return;
-
-    if (chordSelectedKeys.has(midi)) {
-      chordSelectedKeys.delete(midi);
-      if (keyEl) keyEl.classList.remove("quiz-highlight");
-    } else {
-      if (chordSelectedKeys.size < 3) {
-        chordSelectedKeys.add(midi);
-        if (keyEl) keyEl.classList.add("quiz-highlight");
-      }
-    }
-    updateChordBuildCount();
-
-    // Если выбрано 3 ноты — автоматически проверяем!
-    if (chordSelectedKeys.size === 3) {
-      checkChordBuildAnswer();
-    }
-  }
-
-  function checkChordBuildAnswer() {
-    const selectedPcs = Array.from(chordSelectedKeys).map((m) => ((m % 12) + 12) % 12);
-    const targetPcs = chordTargetItem.offsets.map((off) => ((chordTargetItem.rootPc + off) % 12 + 12) % 12);
-
-    const isMatch = targetPcs.every((pc) => selectedPcs.includes(pc));
-    const fb = document.getElementById("chords-feedback");
-
-    const selectedNoteNames = Array.from(chordSelectedKeys).map((m) => midiToNote(m).doremi).join(" - ");
-    const correctNoteNames = chordTargetItem.ruNotes.join(" - ");
-
-    if (isMatch) {
-      playCurrentChordSound();
-      const keys = document.querySelectorAll("#chord-quiz-piano .piano-key");
-      keys.forEach((k) => {
-        if (chordSelectedKeys.has(Number(k.dataset.midi))) {
-          k.classList.remove("quiz-highlight");
-          k.classList.add("quiz-correct");
-        }
-      });
-
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `🎉 Точно! Аккорд ${chordTargetItem.name} (${correctNoteNames}) построен безупречно!`;
-      }
-
-      registerAnswerSuccess(
-        "Запоминание аккордов",
-        `Построение аккорда ${chordTargetItem.name}`,
-        `Собраны ноты ${correctNoteNames}. Аккорд построен верно!`
-      );
-      updateChordStatsUI();
-      setTimeout(nextChordQuiz, 1600);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка: ты собрал ноты (${selectedNoteNames}), а требовалось (${correctNoteNames}). Разбор отправлен в Telegram!`;
-      }
-
-      registerAnswerError(
-        "Запоминание аккордов",
-        `Построение аккорда ${chordTargetItem.name}`,
-        selectedNoteNames,
-        correctNoteNames,
-        `Аккорд ${chordTargetItem.name} состоит из ступеней: ${correctNoteNames}. Строение: ${chordTargetItem.type === "Мажор" ? "б.3 (4 полутона) + м.3 (3 полутона)" : "м.3 (3 полутона) + б.3 (4 полутона)"}.`
-      );
-      updateChordStatsUI();
-    }
-  }
-
-  function renderChordSpellingAnswers() {
-    const ansContainer = document.getElementById("chords-answers");
-    if (!ansContainer || !chordTargetItem) return;
-
-    ansContainer.innerHTML = "";
-    // Правильный вариант
-    const correctOption = {
-      text: `${chordTargetItem.id} = ${chordTargetItem.notes.join(" — ")}`,
-      correct: true
-    };
-
-    // 3 дистрактора
-    const wrong1 = {
-      text: `${chordTargetItem.id} = ${NOTE_NAMES[(chordTargetItem.rootPc + 1) % 12]} — ${chordTargetItem.notes[1]} — ${chordTargetItem.notes[2]}`,
-      correct: false
-    };
-    const wrong2 = {
-      text: `${chordTargetItem.id} = ${chordTargetItem.notes[0]} — ${NOTE_NAMES[(chordTargetItem.rootPc + 5) % 12]} — ${chordTargetItem.notes[2]}`,
-      correct: false
-    };
-    const wrong3 = {
-      text: `${chordTargetItem.id} = ${chordTargetItem.notes[0]} — ${chordTargetItem.notes[1]} — ${NOTE_NAMES[(chordTargetItem.rootPc + 8) % 12]}`,
-      correct: false
-    };
-
-    const options = [correctOption, wrong1, wrong2, wrong3].sort(() => Math.random() - 0.5);
-
-    options.forEach((opt) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "answer";
-      btn.textContent = opt.text;
-      btn.addEventListener("click", () => handleChordSpellingAnswer(opt));
-      ansContainer.appendChild(btn);
-    });
-  }
-
-  function handleChordSpellingAnswer(opt) {
-    const fb = document.getElementById("chords-feedback");
-    const btns = document.querySelectorAll("#chords-answers .answer");
-    btns.forEach((b) => {
-      b.disabled = true;
-      if (b.textContent === `${chordTargetItem.id} = ${chordTargetItem.notes.join(" — ")}`) b.classList.add("correct");
-      if (!opt.correct && b.textContent === opt.text) b.classList.add("wrong");
-    });
-
-    if (opt.correct) {
-      playCurrentChordSound();
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `Абсолютно верно! Состав ${chordTargetItem.name}: ${chordTargetItem.notes.join(" — ")}!`;
-      }
-      registerAnswerSuccess(
-        "Запоминание аккордов",
-        `Состав аккорда ${chordTargetItem.name}`,
-        `Правильно выбран состав: ${chordTargetItem.notes.join(" — ")}`
-      );
-      updateChordStatsUI();
-      setTimeout(nextChordQuiz, 1500);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка! Правильный состав ${chordTargetItem.name}: ${chordTargetItem.notes.join(" — ")}. Отчёт ушёл в Telegram!`;
-      }
-      registerAnswerError(
-        "Запоминание аккордов",
-        `Состав аккорда ${chordTargetItem.name}`,
-        opt.text,
-        `${chordTargetItem.id} = ${chordTargetItem.notes.join(" — ")}`,
-        `Запомни: аккорд ${chordTargetItem.name} состоит из звуков ${chordTargetItem.ruNotes.join(" — ")}.`
-      );
-      updateChordStatsUI();
-    }
-  }
-
-  function renderChordEarAnswers() {
-    const ansContainer = document.getElementById("chords-answers");
-    if (!ansContainer) return;
-    ansContainer.innerHTML = "";
-
-    const types = [
-      { id: "Мажор", name: "Мажорное трезвучие" },
-      { id: "Минор", name: "Минорное трезвучие" },
-      { id: "Уменьшенное", name: "Уменьшенное трезвучие" },
-      { id: "Увеличенное", name: "Увеличенное трезвучие" }
-    ];
-
-    types.forEach((t) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "answer";
-      btn.textContent = t.name;
-      btn.addEventListener("click", () => handleChordEarAnswer(t.id));
-      ansContainer.appendChild(btn);
-    });
-  }
-
-  function handleChordEarAnswer(chosenType) {
-    const fb = document.getElementById("chords-feedback");
-    const isCorrect = chosenType === chordTargetItem.type;
-
-    const btns = document.querySelectorAll("#chords-answers .answer");
-    btns.forEach((b) => {
-      b.disabled = true;
-      if (b.textContent.includes(chordTargetItem.type)) b.classList.add("correct");
-      if (!isCorrect && b.textContent.includes(chosenType)) b.classList.add("wrong");
-    });
-
-    if (isCorrect) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `Верно! Прозвучал ${chordTargetItem.name} (${chordTargetItem.type}).`;
-      }
-      registerAnswerSuccess(
-        "Запоминание аккордов",
-        `Определение аккорда ${chordTargetItem.name} на слух`,
-        `Точно определено наклонение: ${chordTargetItem.type}`
-      );
-      updateChordStatsUI();
-      setTimeout(nextChordQuiz, 1500);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка: выбран «${chosenType}», а звучал «${chordTargetItem.name}» (${chordTargetItem.type}). Отчёт ушёл в Telegram!`;
-      }
-      registerAnswerError(
-        "Запоминание аккордов",
-        `Определение аккорда ${chordTargetItem.name} на слух`,
-        chosenType,
-        chordTargetItem.type,
-        `Аккорд ${chordTargetItem.name} имеет наклонение: ${chordTargetItem.type}. Обрати внимание на окраску терции!`
-      );
-      updateChordStatsUI();
-    }
-  }
-
-  function updateChordStatsUI() {
-    const s = state.statsByExercise["Запоминание аккордов"] || { answered: 0, errors: 0 };
-    const el = document.getElementById("chords-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Ошибок: ${s.errors}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     14. УПРАЖНЕНИЕ 05: СЕПТАККОРДЫ
-     ------------------------------------------------------------------------ */
-  let seventhTarget = null;
-  let seventhRootMidi = 60;
-
-  function nextSeventhQuiz() {
-    const keys = ["dom7", "maj7", "m7", "dim7"];
-    const chosenKey = keys[Math.floor(Math.random() * keys.length)];
-    seventhTarget = { key: chosenKey, info: SEVENTHS[chosenKey] };
-    seventhRootMidi = 60 + Math.floor(Math.random() * 5);
-
-    playSeventhQuizSound();
-
-    const ansContainer = document.getElementById("sevenths-answers");
-    if (ansContainer) {
-      ansContainer.innerHTML = "";
-      keys.forEach((k) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "answer";
-        btn.textContent = SEVENTHS[k].name;
-        btn.addEventListener("click", () => handleSeventhAnswer(k));
-        ansContainer.appendChild(btn);
-      });
-    }
-
-    const fb = document.getElementById("sevenths-feedback");
-    if (fb) {
-      fb.className = "feedback";
-      fb.textContent = "Послушай септаккорд и определи его тип.";
-    }
-  }
-
-  function playSeventhQuizSound() {
-    if (!seventhTarget) return;
-    const midis = seventhTarget.info.offsets.map((off) => seventhRootMidi + off);
-    playChordMidi(midis, 1.9);
-  }
-
-  function handleSeventhAnswer(chosenKey) {
-    if (!seventhTarget) return;
-
-    const fb = document.getElementById("sevenths-feedback");
-    const isCorrect = chosenKey === seventhTarget.key;
-
-    const btns = document.querySelectorAll("#sevenths-answers .answer");
-    btns.forEach((b) => {
-      b.disabled = true;
-      if (b.textContent === seventhTarget.info.name) b.classList.add("correct");
-      if (!isCorrect && b.textContent === SEVENTHS[chosenKey].name) b.classList.add("wrong");
-    });
-
-    if (isCorrect) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `Верно! Это ${seventhTarget.info.name} — ${seventhTarget.info.desc}!`;
-      }
-      registerAnswerSuccess(
-        "Септаккорды",
-        `Определение ${seventhTarget.info.name}`,
-        `Угадан тип: ${seventhTarget.info.desc}`
-      );
-      updateSeventhStatsUI();
-      setTimeout(nextSeventhQuiz, 1500);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Неверно: выбран «${SEVENTHS[chosenKey].name}», правильный ответ — «${seventhTarget.info.name}». Отчёт ушёл в Telegram!`;
-      }
-
-      registerAnswerError(
-        "Септаккорды",
-        "Определи септаккорд на слух",
-        SEVENTHS[chosenKey].name,
-        seventhTarget.info.name,
-        `Септаккорд ${seventhTarget.info.name} имеет структуру: ${seventhTarget.info.desc}.`
-      );
-      updateSeventhStatsUI();
-    }
-  }
-
-  function updateSeventhStatsUI() {
-    const s = state.statsByExercise["Септаккорды"] || { answered: 0, errors: 0 };
-    const el = document.getElementById("sevenths-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Ошибок: ${s.errors}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     15. УПРАЖНЕНИЕ 06: ГАММЫ И СТУПЕНИ
-     ------------------------------------------------------------------------ */
-  const SCALE_QUESTIONS = [
-    {
-      q: "Какой палец правой руки нажимает ноту Фа (F) в До мажоре после подкладывания?",
-      answers: ["1-й (большой)", "2-й (указательный)", "3-й (средний)", "4-й (безымянный)"],
-      correct: 0,
-      expl: "После 1-2-3 (До-Ре-Ми) большой палец подкладывается под 3-й и берёт ноту Фа первым пальцем!"
-    },
-    {
-      q: "Какая нота является повышенной VII ступенью в Ля миноре гармоническом?",
-      answers: ["Соль-диез (G♯)", "Соль (G)", "Фа-диез (F♯)", "Си (B)"],
-      correct: 0,
-      expl: "В Ля миноре натуральная VII ступень — Соль (G). При повышении она становится Соль-диезом (G♯)."
-    },
-    {
-      q: "Сколько звуков содержит пентатоника в одной октаве?",
-      answers: ["5 звуков", "7 звуков", "6 звуков", "12 звуков"],
-      correct: 0,
-      expl: "«Пента» означает пять. Пентатоника состоит из пяти ступеней без полутонов."
-    },
-    {
-      q: "Какой интервал характерен для блюзовой гаммы («blue note»)?",
-      answers: ["Пониженная V ступень (тритон)", "Повышенная I ступень", "Малая секунда", "Чистая октава"],
-      correct: 0,
-      expl: "Блюзовая нота — это пониженная 5-я ступень (тритон от тоники), создающая фирменный блюзовый плач."
-    }
+/* SVG-гриф: каждый лад — клавиатурно доступная кнопка, 0 обозначает открытую струну. */
+function renderBoard(id, options = {}) {
+  const el = byId(id);
+  const previousFocus = el.contains(document.activeElement)
+    ? document.activeElement.getAttribute("data-pos")
+    : null;
+  const activePcs = new Set(options.activePcs || []);
+  const activePositions = new Set(options.activePositions || []);
+  const selected = options.selected || new Set();
+  const rootPositions = options.rootPositions
+    ? new Set(options.rootPositions)
+    : null;
+  const nameLookup = options.names || {};
+  const x0 = 145,
+    fretWidth = 69,
+    top = 57,
+    gap = 36,
+    right = x0 + 12 * fretWidth;
+  const parts = [
+    `<svg viewBox="0 0 1010 282" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Гитарный гриф: первая струна сверху, открытые струны слева">
+    <rect x="${x0}" y="38" width="${12 * fretWidth}" height="218" rx="7" fill="#efe9d9" stroke="#e3ddcb"/>
+    <rect x="${x0 - 3}" y="38" width="7" height="218" rx="2" fill="#b6bba7"/>`,
   ];
-
-  let currentScaleQIdx = 0;
-
-  function nextScaleQuiz() {
-    currentScaleQIdx = Math.floor(Math.random() * SCALE_QUESTIONS.length);
-    const item = SCALE_QUESTIONS[currentScaleQIdx];
-
-    const qEl = document.getElementById("scales-quiz-question");
-    if (qEl) qEl.textContent = item.q;
-
-    const ansContainer = document.getElementById("scales-answers");
-    if (ansContainer) {
-      ansContainer.innerHTML = "";
-      item.answers.forEach((ans, idx) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "answer";
-        btn.textContent = ans;
-        btn.addEventListener("click", () => handleScaleAnswer(idx));
-        ansContainer.appendChild(btn);
-      });
-    }
-
-    const fb = document.getElementById("scales-feedback");
-    if (fb) {
-      fb.className = "feedback";
-      fb.textContent = "Выбери правильный ответ.";
-    }
+  [3, 5, 7, 9].forEach((fret) =>
+    parts.push(
+      `<circle cx="${x0 + (fret - 0.5) * fretWidth}" cy="147" r="5" fill="#dedac8"/>`,
+    ),
+  );
+  [111, 183].forEach((y) =>
+    parts.push(
+      `<circle cx="${x0 + 11.5 * fretWidth}" cy="${y}" r="5" fill="#dedac8"/>`,
+    ),
+  );
+  for (let fret = 1; fret <= 12; fret++) {
+    const x = x0 + fret * fretWidth;
+    parts.push(
+      `<line x1="${x}" y1="38" x2="${x}" y2="256" stroke="#c2bfaf" stroke-width="2"/>`,
+    );
   }
-
-  function handleScaleAnswer(chosenIdx) {
-    const item = SCALE_QUESTIONS[currentScaleQIdx];
-    const isCorrect = chosenIdx === item.correct;
-    const fb = document.getElementById("scales-feedback");
-
-    const btns = document.querySelectorAll("#scales-answers .answer");
-    btns.forEach((b, idx) => {
-      b.disabled = true;
-      if (idx === item.correct) b.classList.add("correct");
-      if (!isCorrect && idx === chosenIdx) b.classList.add("wrong");
-    });
-
-    if (isCorrect) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `Отлично! ${item.expl}`;
+  for (let fret = 0; fret <= 12; fret++) {
+    const x = fret === 0 ? x0 - 36 : x0 + (fret - 0.5) * fretWidth;
+    parts.push(
+      `<text x="${x}" y="25" text-anchor="middle" fill="#9aa99b" font-family="Arial, sans-serif" font-size="10" font-weight="700">${fret}</text>`,
+    );
+  }
+  STRINGS.forEach((string, s) => {
+    const y = top + s * gap;
+    parts.push(
+      `<text x="31" y="${y + 4}" text-anchor="middle" fill="#69806c" font-family="Arial, sans-serif" font-size="12" font-weight="700">${string.name}</text>`,
+    );
+    parts.push(
+      `<text x="53" y="${y + 3}" text-anchor="middle" fill="#b0bbae" font-family="Arial, sans-serif" font-size="9">${s + 1}</text>`,
+    );
+    parts.push(
+      `<line x1="69" y1="${y}" x2="${right}" y2="${y}" stroke="#b9baaa" stroke-width="${1 + s * 0.22}"/>`,
+    );
+    for (let fret = 0; fret <= 12; fret++) {
+      const x = fret === 0 ? x0 - 36 : x0 + (fret - 0.5) * fretWidth;
+      const midi = string.midi + fret,
+        pc = mod(midi),
+        key = s + ":" + fret;
+      const pitchName = nameLookup[pc] || CHROMATIC[pc];
+      const position = { string: s, fret, midi, key, pc };
+      const active =
+        activePcs.has(pc) ||
+        activePositions.has(key) ||
+        (options.activeFilter && options.activeFilter(position));
+      const chosen = selected.has(key);
+      const visible = !!options.showAll || active || chosen;
+      const isRoot =
+        active &&
+        (rootPositions
+          ? rootPositions.has(key)
+          : options.rootPc != null && pc === options.rootPc);
+      const isQuestion = options.questionKey === key;
+      let fill = "#fbfaf4",
+        stroke = "#deddd1",
+        text = "#8d998a";
+      if (active) {
+        fill = "#c9ddb5";
+        stroke = "#bbd3a8";
+        text = "#365e43";
       }
-      registerAnswerSuccess(
-        "Гаммы и пальцы",
-        item.q,
-        `Правильный ответ: «${item.answers[item.correct]}»`
-      );
-      updateScaleStatsUI();
-      setTimeout(nextScaleQuiz, 1600);
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Ошибка! Правильный ответ: «${item.answers[item.correct]}». Разбор отправлен в Telegram.`;
+      if (isRoot || isQuestion) {
+        fill = "#3d6e52";
+        stroke = "#3d6e52";
+        text = "#ffffff";
       }
-      registerAnswerError(
-        "Гаммы и пальцы",
-        item.q,
-        item.answers[chosenIdx],
-        item.answers[item.correct],
-        item.expl
-      );
-      updateScaleStatsUI();
-    }
-  }
-
-  function updateScaleStatsUI() {
-    const s = state.statsByExercise["Гаммы и пальцы"] || { answered: 0, errors: 0 };
-    const el = document.getElementById("scales-stats");
-    if (el) el.textContent = `Серия: ${state.currentStreak} • Ошибок: ${s.errors}`;
-  }
-
-  /* ------------------------------------------------------------------------
-     16. УПРАЖНЕНИЕ 08: СЛУХОВОЙ ДИКТАНТ И СОЛЬФЕДЖИО
-     ------------------------------------------------------------------------ */
-  let dictationTargetNotes = [];
-  let dictationUserNotes = [];
-
-  function initSolfeggioDictation() {
-    renderPianoKeyboard("solfeggio-piano", {
-      startMidi: 60,
-      endMidi: 72,
-      showShortcuts: true,
-      onClick: handleDictationKeyClick
-    });
-  }
-
-  function playDictationMelody() {
-    const len = parseInt(document.getElementById("solfeggio-length-select")?.value || "3", 10);
-    const scale = [60, 62, 64, 65, 67, 69, 71, 72];
-
-    // Настройка слуха тоническим трезвучием
-    playPianoTone(60, 0.4, 0.7);
-    setTimeout(() => playPianoTone(64, 0.4, 0.7), 250);
-    setTimeout(() => playPianoTone(67, 0.4, 0.7), 500);
-    setTimeout(() => playPianoTone(72, 0.6, 0.75), 750);
-
-    dictationTargetNotes = [];
-    let prev = 60;
-    for (let i = 0; i < len; i++) {
-      const stepCandidates = scale.filter((m) => Math.abs(m - prev) <= 4);
-      const chosen = stepCandidates[Math.floor(Math.random() * stepCandidates.length)];
-      dictationTargetNotes.push(chosen);
-      prev = chosen;
-    }
-
-    dictationUserNotes = [];
-    updateDictationUserDisplay();
-
-    const prompt = document.getElementById("solfeggio-prompt");
-    if (prompt) {
-      prompt.textContent = `Настройка слуха (C-E-G-C), затем звучит мелодия из ${len} нот...`;
-    }
-
-    dictationTargetNotes.forEach((m, idx) => {
-      setTimeout(() => {
-        playPianoTone(m, 0.7, 0.85);
-        if (idx === len - 1 && prompt) {
-          prompt.textContent = `Мелодия прозвучала! Сыграй ${len} услышанных нот на клавиатуре ниже.`;
-        }
-      }, 1400 + idx * 600);
-    });
-  }
-
-  function handleDictationKeyClick(midi, note) {
-    const len = parseInt(document.getElementById("solfeggio-length-select")?.value || "3", 10);
-    if (dictationUserNotes.length >= len) return;
-
-    dictationUserNotes.push(note);
-    updateDictationUserDisplay();
-  }
-
-  function updateDictationUserDisplay() {
-    const el = document.getElementById("solfeggio-user-sequence");
-    if (!el) return;
-    if (!dictationUserNotes.length) {
-      el.textContent = "(пока ничего не сыграно)";
-    } else {
-      el.textContent = dictationUserNotes.map((n) => `${n.doremi} (${n.name})`).join("  →  ");
-    }
-  }
-
-  function checkDictationAnswer() {
-    if (!dictationTargetNotes.length) {
-      alert("Сначала послушай мелодию, нажав «Послушать мелодию диктанта»!");
-      return;
-    }
-
-    const fb = document.getElementById("solfeggio-feedback");
-    const len = dictationTargetNotes.length;
-
-    if (dictationUserNotes.length < len) {
-      if (fb) fb.textContent = `Нужно сыграть ещё ${len - dictationUserNotes.length} нот!`;
-      return;
-    }
-
-    const userMidis = dictationUserNotes.map((n) => n.midi);
-    const targetNames = dictationTargetNotes.map((m) => midiToNote(m).doremi).join(" - ");
-    const userNames = dictationUserNotes.map((n) => n.doremi).join(" - ");
-
-    let isMatch = true;
-    for (let i = 0; i < len; i++) {
-      if (userMidis[i] !== dictationTargetNotes[i]) {
-        isMatch = false;
-        break;
+      if (chosen) {
+        fill = "#eebf8e";
+        stroke = "#dda977";
+        text = "#5c4433";
       }
-    }
-
-    if (isMatch) {
-      if (fb) {
-        fb.className = "feedback success-feedback";
-        fb.textContent = `🎉 Браво! Абсолютно точно: ${targetNames}! Слух развит прекрасно!`;
+      if (!visible) {
+        fill = "transparent";
+        stroke = "transparent";
+        text = "transparent";
       }
-      registerAnswerSuccess(
-        "Слуховой диктант",
-        `Мелодический диктант из ${len} нот`,
-        `Сыграна точная цепочка: ${targetNames}`
-      );
-    } else {
-      if (fb) {
-        fb.className = "feedback error-feedback";
-        fb.textContent = `Не совсем так. Ты сыграл: ${userNames}. Правильная мелодия: ${targetNames}. Ошибка отправлена в Telegram!`;
-      }
-      registerAnswerError(
-        "Слуховой диктант",
-        `Мелодия из ${len} нот`,
-        userNames,
-        targetNames,
-        `В До мажоре ориентируйся на опорные ноты тонического трезвучия До (I), Ми (III) и Соль (V).`
+      const label = isQuestion ? "?" : prettyNote(pitchName);
+      const aria = isQuestion
+        ? `Загаданная нота: ${describePosition(position)}`
+        : `${describePosition(position)}, ${writtenNote(pitchName, midi)}`;
+      parts.push(
+        `<g class="fret-click" role="button" tabindex="0" data-pos="${key}" aria-label="${escapeHTML(aria)}"><circle class="note-disc" cx="${x}" cy="${y}" r="14" fill="${fill}" stroke="${stroke}"/><text x="${x}" y="${y + 3.8}" text-anchor="middle" fill="${text}" font-family="Arial, sans-serif" font-weight="700" font-size="${label.length > 2 ? 9 : 10.5}">${escapeHTML(label)}</text></g>`,
       );
     }
+  });
+  parts.push(
+    `<text x="31" y="276" text-anchor="middle" fill="#aab5a7" font-family="Arial, sans-serif" font-size="8" font-weight="700">СТРУНЫ</text><text x="${right}" y="276" text-anchor="end" fill="#aab5a7" font-family="Arial, sans-serif" font-size="8" font-weight="700">ЛАДЫ 0–12</text></svg>`,
+  );
+  el.innerHTML = parts.join("");
+  function activate(target) {
+    const group = target.closest("[data-pos]");
+    if (!group || !el.contains(group)) return;
+    const [string, fret] = group.dataset.pos.split(":").map(Number);
+    const midi = STRINGS[string].midi + fret,
+      pc = mod(midi);
+    const position = { string, fret, midi, pc, key: group.dataset.pos };
+    const name = nameLookup[pc] || CHROMATIC[pc];
+    if (options.status && byId(options.status))
+      byId(options.status).textContent =
+        `${writtenNote(name, midi)} · ${describePosition(position)}`;
+    playNote(midi);
+    if (options.onPick) options.onPick(position);
   }
-
-  /* ------------------------------------------------------------------------
-     17. НАВИГАЦИЯ ПО РАЗДЕЛАМ (VIEWS)
-     ------------------------------------------------------------------------ */
-  const VIEW_META = {
-    notes: {
-      no: "01 / САМОЕ НАЧАЛО",
-      title: "Каждая клавиша —<br /><em>твой собственный голос.</em>",
-      text: "Разберёмся в нотах, октавах, белых и чёрных клавишах. Слушай рояль и практикуйся.",
-      stamp: "C4"
-    },
-    sightreading: {
-      no: "02 / НОТНЫЙ СТАН",
-      title: "Двойной стан:<br /><em>скрипичный и басовый ключи.</em>",
-      text: "Читаем ноты с листа легко. До первой октавы как центральный мост для двух рук.",
-      stamp: "𝄞+𝄢"
-    },
-    intervals: {
-      no: "03 / ТРЕНИРОВКА СЛУХА",
-      title: "Интервалы:<br /><em>эмоции и расстояния звуков.</em>",
-      text: "Узнай 12 интервалов по знаменитым мелодиям и песням-ассоциациям.",
-      stamp: "M3"
-    },
-    chords: {
-      no: "04 / ГАРМОНИЯ ПИАНИНО",
-      title: "Запоминание аккордов<br /><em>и их обращения.</em>",
-      text: "Построение аккордов на клавишах, нотный состав и слуховой анализ.",
-      stamp: "C/E"
-    },
-    sevenths: {
-      no: "05 / ДЖАЗОВАЯ ГАРМОНИЯ",
-      title: "Септаккорды:<br /><em>джаз и современный аккомпанемент.</em>",
-      text: "C7, Cmaj7, Cm7, ø7, °7 и знаменитая формула движения ii - V - I.",
-      stamp: "Cmaj7"
-    },
-    scales: {
-      no: "06 / ПРАВИЛЬНЫЕ ПАЛЬЦЫ",
-      title: "Гаммы, аппликатура<br /><em>и скорость игры.</em>",
-      text: "Секрет подкладывания первого пальца, мажор, гармонический минор и пентатоника.",
-      stamp: "1-2-3"
-    },
-    rhythm: {
-      no: "07 / ЧУВСТВО ВРЕМЕНИ",
-      title: "Ритмика, метр<br /><em>и внутренний пульс.</em>",
-      text: "Интерактивный метроном и тап-тренажёр с подсчётом точности до миллисекунды.",
-      stamp: "BPM"
-    },
-    solfeggio: {
-      no: "08 / СОЛЬФЕДЖИО",
-      title: "Слуховой диктант:<br /><em>услышь и повтори.</em>",
-      text: "Опорные ступени тоники, разрешение неустойчивых звуков и подбор на слух.",
-      stamp: "T-S-D"
-    },
-    play: {
-      no: "09 / СВОБОДНОЕ ТВОРЧЕСТВО",
-      title: "Мастерская фортепиано:<br /><em>играй, записывай, твори.</em>",
-      text: "3 октавы, живое отображение на нотном стане и реалистичные тембры рояля.",
-      stamp: "88"
-    },
-    telegram: {
-      no: "10 / TELEGRAM ПОМОЩНИК",
-      title: "Твой персональный бот<br /><em>с отчётами об ошибках.</em>",
-      text: "Автоматическая отправка выполненных упражнений, разбора ошибок и серий побед прямо в мессенджер.",
-      stamp: "TG"
+  el.onclick = (event) => activate(event.target);
+  el.onkeydown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activate(event.target);
     }
   };
-
-  function showView(viewName) {
-    const target = viewName || location.hash.slice(1) || "notes";
-    const name = VIEW_META[target] ? target : "notes";
-    const meta = VIEW_META[name];
-
-    document.querySelectorAll(".view").forEach((v) => {
-      v.hidden = v.id !== "view-" + name;
-    });
-
-    document.querySelectorAll(".navigation a").forEach((link) => {
-      link.classList.toggle("active", link.dataset.nav === name);
-    });
-
-    const b = document.getElementById("breadcrumb");
-    if (b) {
-      const activeLink = document.querySelector(`.navigation a[data-nav="${name}"] span:nth-child(2)`);
-      if (activeLink) b.textContent = activeLink.textContent;
-    }
-
-    const eyebrow = document.getElementById("intro-eyebrow");
-    if (eyebrow) eyebrow.textContent = meta.no;
-    const title = document.getElementById("intro-title");
-    if (title) title.innerHTML = meta.title;
-    const desc = document.getElementById("intro-text");
-    if (desc) desc.textContent = meta.text;
-    const stamp = document.getElementById("stamp-note");
-    if (stamp) stamp.textContent = meta.stamp;
-
-    if (name === "sightreading") {
-      renderGrandStaffSvg("staff-display", [60]);
-    } else if (name === "intervals") {
-      updateIntervalSection();
-    } else if (name === "chords") {
-      updateChordSection();
-    } else if (name === "sevenths") {
-      updateSeventhSection();
-    } else if (name === "scales") {
-      updateScaleSection();
-    } else if (name === "play") {
-      renderGrandStaffSvg("freelab-staff-display", [60]);
-    } else if (name === "telegram") {
-      renderTelegramLog();
-      if (!tgSettings.chatId) {
-        autoDetectTelegramChatId(true);
-      }
-    }
+  if (previousFocus) {
+    const replacement = el.querySelector(`[data-pos="${previousFocus}"]`);
+    if (replacement) replacement.focus({ preventScroll: true });
   }
+}
 
-  /* ------------------------------------------------------------------------
-     18. ОБНОВЛЕНИЯ ДЛЯ РАЗДЕЛОВ ИССЛЕДОВАНИЯ
-     ------------------------------------------------------------------------ */
-  function populateSelects() {
-    const rootSelects = ["interval-root-select", "chord-root-select", "seventh-root-select", "scale-root-select"];
-    rootSelects.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = NOTE_NAMES.map((name, idx) => `<option value="${idx}">${NOTE_RU[idx]} (${name})</option>`).join("");
-      el.value = "0";
-    });
-
-    const intSel = document.getElementById("interval-select");
-    if (intSel) {
-      intSel.innerHTML = INTERVALS.map((item) => `<option value="${item.semitones}">${item.name} (${item.semitones} полут.)</option>`).join("");
-      intSel.value = "4";
-    }
-  }
-
-  function updateIntervalSection() {
-    const rootPc = parseInt(document.getElementById("interval-root-select")?.value || "0", 10);
-    const semitones = parseInt(document.getElementById("interval-select")?.value || "4", 10);
-    const rootMidi = 60 + rootPc;
-    const secondMidi = rootMidi + semitones;
-
-    renderGrandStaffSvg("interval-staff-display", [rootMidi, secondMidi]);
-    renderPianoKeyboard("interval-piano", {
-      startMidi: 48,
-      endMidi: 76,
-      showShortcuts: false
-    });
-
-    const k1 = document.querySelector(`#interval-piano .piano-key[data-midi="${rootMidi}"]`);
-    const k2 = document.querySelector(`#interval-piano .piano-key[data-midi="${secondMidi}"]`);
-    if (k1) k1.classList.add("quiz-highlight");
-    if (k2) k2.classList.add("quiz-correct");
-
-    const intObj = INTERVALS.find((i) => i.semitones === semitones) || INTERVALS[3];
-    const cap = document.getElementById("interval-info-caption");
-    if (cap) {
-      cap.textContent = `${intObj.name}: ${midiToNote(rootMidi).doremi} → ${midiToNote(secondMidi).doremi} • ${intObj.song}`;
-    }
-  }
-
-  function updateChordSection() {
-    const rootPc = parseInt(document.getElementById("chord-root-select")?.value || "0", 10);
-    const chordType = document.getElementById("chord-type-select")?.value || "major";
-    const inv = document.getElementById("chord-inversion-select")?.value || "root";
-    const triad = TRIADS[chordType] || TRIADS.major;
-
-    let offsets = [...triad.offsets];
-    if (inv === "first") {
-      offsets = [offsets[1], offsets[2], offsets[0] + 12];
-    } else if (inv === "second") {
-      offsets = [offsets[2], offsets[0] + 12, offsets[1] + 12];
-    }
-
-    const midis = offsets.map((o) => 60 + rootPc + o);
-    renderGrandStaffSvg("chord-staff-display", midis);
-    renderPianoKeyboard("chord-piano", {
-      startMidi: 48,
-      endMidi: 76,
-      showShortcuts: false
-    });
-
-    midis.forEach((m) => {
-      const k = document.querySelector(`#chord-piano .piano-key[data-midi="${m}"]`);
-      if (k) k.classList.add("quiz-correct");
-    });
-
-    const cap = document.getElementById("chord-notes-caption");
-    if (cap) {
-      const noteNames = midis.map((m) => midiToNote(m).doremi).join(" — ");
-      cap.textContent = `${triad.name}: ${noteNames} (${triad.desc})`;
-    }
-  }
-
-  function updateSeventhSection() {
-    const rootPc = parseInt(document.getElementById("seventh-root-select")?.value || "0", 10);
-    const typeKey = document.getElementById("seventh-type-select")?.value || "dom7";
-    const info = SEVENTHS[typeKey] || SEVENTHS.dom7;
-
-    const midis = info.offsets.map((o) => 60 + rootPc + o);
-    renderGrandStaffSvg("seventh-staff-display", midis);
-    renderPianoKeyboard("seventh-piano", {
-      startMidi: 48,
-      endMidi: 76,
-      showShortcuts: false
-    });
-
-    midis.forEach((m) => {
-      const k = document.querySelector(`#seventh-piano .piano-key[data-midi="${m}"]`);
-      if (k) k.classList.add("quiz-correct");
-    });
-
-    const cap = document.getElementById("seventh-caption");
-    if (cap) {
-      const noteNames = midis.map((m) => midiToNote(m).doremi).join(" — ");
-      cap.textContent = `${info.name}: ${noteNames} • ${info.desc}`;
-    }
-  }
-
-  function updateScaleSection() {
-    const rootPc = parseInt(document.getElementById("scale-root-select")?.value || "0", 10);
-    const scaleKey = document.getElementById("scale-type-select")?.value || "major";
-    const hand = document.querySelector("[data-hand].active")?.dataset.hand || "right";
-    const scaleObj = SCALES[scaleKey] || SCALES.major;
-
-    const rootMidi = 60 + rootPc;
-    const midis = scaleObj.offsets.map((o) => rootMidi + o);
-    const fingers = hand === "right" ? scaleObj.fingeringRight : scaleObj.fingeringLeft;
-
-    const fingerMap = {};
-    midis.forEach((m, idx) => {
-      if (fingers && fingers[idx]) fingerMap[m] = fingers[idx];
-    });
-
-    renderGrandStaffSvg("scale-staff-display", midis);
-    renderPianoKeyboard("scale-piano", {
-      startMidi: 48,
-      endMidi: 76,
-      showShortcuts: false,
-      fingers: fingerMap
-    });
-
-    midis.forEach((m, idx) => {
-      const k = document.querySelector(`#scale-piano .piano-key[data-midi="${m}"]`);
-      if (k) {
-        if (idx === 0) k.classList.add("quiz-highlight");
-        else k.classList.add("quiz-correct");
-      }
-    });
-
-    const cap = document.getElementById("scale-formula-caption");
-    if (cap) {
-      cap.textContent = `Формула: ${scaleObj.formula} (${hand === "right" ? "Правая рука" : "Левая рука"})`;
-    }
-  }
-
-  /* ------------------------------------------------------------------------
-     19. ИНИЦИАЛИЗАЦИЯ И СТАРТ
-     ------------------------------------------------------------------------ */
-  function initialize() {
-    loadState();
-    updateGlobalStatsUI();
-    updateTelegramStatusUI();
-    populateSelects();
-    fetchBotInfo();
-
-    // Автоматическое определение Chat ID в фоне при наличии входящих сообщений
-    if (!tgSettings.chatId) {
-      setTimeout(() => autoDetectTelegramChatId(true), 600);
-    }
-
-    renderPianoKeyboard("notes-piano", {
-      startMidi: 48,
-      endMidi: 72,
-      showShortcuts: state.showShortcuts
-    });
-
-    renderPianoKeyboard("staff-piano", {
-      startMidi: 48,
-      endMidi: 72,
-      showShortcuts: true
-    });
-
-    renderPianoKeyboard("freelab-piano", {
-      startMidi: 48,
-      endMidi: 84,
-      showShortcuts: true
-    });
-
-    initNotesQuiz();
-    initSightReadingQuiz();
-    initChordQuiz();
-    initSolfeggioDictation();
-    nextIntervalQuiz();
-    nextSeventhQuiz();
-    nextScaleQuiz();
-
-    // Слушатель клавиатуры ПК (ASDFGHJK + Space)
-    window.addEventListener("keydown", (e) => {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") {
-        return;
-      }
-
-      if (e.code === "Space") {
-        e.preventDefault();
-        handleUserTap();
-        return;
-      }
-
-      if (KEY_SHORTCUTS[e.code]) {
-        e.preventDefault();
-        const midi = KEY_SHORTCUTS[e.code];
-        if (!state.activeNotes.has(midi)) {
-          state.activeNotes.add(midi);
-          const activeKey = document.querySelector(`.piano-key[data-midi="${midi}"]`);
-          triggerKey(midi, activeKey);
-        }
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (KEY_SHORTCUTS[e.code]) {
-        const midi = KEY_SHORTCUTS[e.code];
-        state.activeNotes.delete(midi);
-      }
-    });
-
-    const tapBtn = document.getElementById("tap-btn");
-    if (tapBtn) {
-      tapBtn.addEventListener("click", handleUserTap);
-    }
-
-    const metroBtn = document.getElementById("metronome-toggle-btn");
-    if (metroBtn) {
-      metroBtn.addEventListener("click", () => {
-        if (isMetronomeRunning) stopMetronome();
-        else startMetronome();
-      });
-    }
-
-    const bpmSlider = document.getElementById("bpm-slider");
-    if (bpmSlider) {
-      bpmSlider.addEventListener("input", (e) => {
-        bpm = parseInt(e.target.value, 10);
-        const bpmVal = document.getElementById("bpm-val");
-        if (bpmVal) bpmVal.textContent = bpm;
-        if (isMetronomeRunning) {
-          stopMetronome();
-          startMetronome();
-        }
-      });
-    }
-
-    const meterSel = document.getElementById("meter-select");
-    if (meterSel) {
-      meterSel.addEventListener("change", (e) => {
-        meter = parseInt(e.target.value, 10);
-        const dotsContainer = document.getElementById("meter-dots-container");
-        if (dotsContainer) {
-          dotsContainer.innerHTML = "";
-          for (let i = 1; i <= meter; i++) {
-            const d = document.createElement("div");
-            d.className = "meter-dot" + (i === 1 ? " accent-dot" : "");
-            d.dataset.beat = i;
-            dotsContainer.appendChild(d);
-          }
-        }
-      });
-    }
-
-    const rhythmChalBtn = document.getElementById("rhythm-start-challenge-btn");
-    if (rhythmChalBtn) {
-      rhythmChalBtn.addEventListener("click", () => {
-        tapStats.challengeActive = true;
-        tapStats.challengeTaps = 0;
-        tapStats.totalTaps = 0;
-        tapStats.perfectHits = 0;
-        tapStats.goodHits = 0;
-        tapStats.offsets = [];
-        if (!isMetronomeRunning) startMetronome();
-        const fb = document.getElementById("rhythm-challenge-feedback");
-        if (fb) {
-          fb.className = "feedback";
-          fb.textContent = "Раунд начался! Отбей 8 точных тапов ровно в такт (пробел или кнопка ТАП).";
-        }
-      });
-    }
-
-    document.getElementById("notes-next-btn")?.addEventListener("click", nextNotesQuiz);
-    document.getElementById("sightreading-next-btn")?.addEventListener("click", nextSightReadingQuiz);
-    document.getElementById("intervals-next-btn")?.addEventListener("click", nextIntervalQuiz);
-    document.getElementById("chords-next-btn")?.addEventListener("click", nextChordQuiz);
-    document.getElementById("sevenths-next-btn")?.addEventListener("click", nextSeventhQuiz);
-    document.getElementById("scales-next-btn")?.addEventListener("click", nextScaleQuiz);
-
-    document.getElementById("intervals-repeat-btn")?.addEventListener("click", () => {
-      if (intervalTarget) playIntervalSound(intervalRootMidi, intervalTarget.semitones, "up");
-    });
-    document.getElementById("chords-repeat-btn")?.addEventListener("click", playCurrentChordSound);
-    document.getElementById("sevenths-repeat-btn")?.addEventListener("click", playSeventhQuizSound);
-
-    document.getElementById("interval-play-btn")?.addEventListener("click", () => {
-      const mode = document.querySelector("[data-interval-mode].active")?.dataset.intervalMode || "up";
-      const semitones = parseInt(document.getElementById("interval-select")?.value || "4", 10);
-      const rootPc = parseInt(document.getElementById("interval-root-select")?.value || "0", 10);
-      playIntervalSound(60 + rootPc, semitones, mode);
-    });
-
-    document.getElementById("chord-play-btn")?.addEventListener("click", () => {
-      const mode = document.querySelector("[data-chord-play].active")?.dataset.chordPlay || "together";
-      const rootPc = parseInt(document.getElementById("chord-root-select")?.value || "0", 10);
-      const chordType = document.getElementById("chord-type-select")?.value || "major";
-      const triad = TRIADS[chordType] || TRIADS.major;
-      const midis = triad.offsets.map((o) => 60 + rootPc + o);
-      playChordMidi(midis, 1.8, mode === "arpeggio");
-    });
-
-    document.getElementById("seventh-play-btn")?.addEventListener("click", () => {
-      const rootPc = parseInt(document.getElementById("seventh-root-select")?.value || "0", 10);
-      const typeKey = document.getElementById("seventh-type-select")?.value || "dom7";
-      const info = SEVENTHS[typeKey] || SEVENTHS.dom7;
-      const midis = info.offsets.map((o) => 60 + rootPc + o);
-      playChordMidi(midis, 2.0);
-    });
-
-    document.getElementById("seventh-play-cadence-btn")?.addEventListener("click", () => {
-      const dm7 = [50, 53, 57, 60];
-      const g7 = [55, 59, 62, 65];
-      const cmaj7 = [48, 52, 55, 59];
-      playChordMidi(dm7, 1.4);
-      setTimeout(() => playChordMidi(g7, 1.4), 1000);
-      setTimeout(() => playChordMidi(cmaj7, 2.2), 2000);
-    });
-
-    document.getElementById("scale-play-btn")?.addEventListener("click", () => {
-      const rootPc = parseInt(document.getElementById("scale-root-select")?.value || "0", 10);
-      const scaleKey = document.getElementById("scale-type-select")?.value || "major";
-      const scaleObj = SCALES[scaleKey] || SCALES.major;
-      const midis = scaleObj.offsets.map((o) => 60 + rootPc + o);
-      const sequence = midis.concat(midis.slice(0, -1).reverse());
-      sequence.forEach((m, idx) => {
-        setTimeout(() => playPianoTone(m, 0.45, 0.8), idx * 240);
-      });
-    });
-
-    document.getElementById("solfeggio-play-dictation-btn")?.addEventListener("click", playDictationMelody);
-    document.getElementById("solfeggio-clear-btn")?.addEventListener("click", () => {
-      dictationUserNotes = [];
-      updateDictationUserDisplay();
-    });
-    document.getElementById("solfeggio-check-btn")?.addEventListener("click", checkDictationAnswer);
-
-    document.querySelectorAll("[data-timbre]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-timbre]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.timbre = btn.dataset.timbre;
-      });
-    });
-
-    const recBtn = document.getElementById("freelab-rec-btn");
-    const playRecBtn = document.getElementById("freelab-play-rec-btn");
-    if (recBtn) {
-      recBtn.addEventListener("click", () => {
-        if (!state.isRecording) {
-          state.isRecording = true;
-          state.recordedNotes = [];
-          recBtn.textContent = "■ Стоп запись";
-          recBtn.style.background = "#9c3224";
-        } else {
-          state.isRecording = false;
-          recBtn.textContent = "● Запись";
-          recBtn.style.background = "#5c2d27";
-        }
-      });
-    }
-    if (playRecBtn) {
-      playRecBtn.addEventListener("click", () => {
-        if (!state.recordedNotes.length) return;
-        const firstTime = state.recordedNotes[0].time;
-        state.recordedNotes.forEach((item) => {
-          const delay = item.time - firstTime;
-          setTimeout(() => playPianoTone(item.midi, 0.9, 0.8), delay);
+/* Нотный стан: основной рендерер VexFlow; запасной SVG нужен для работы без сети. */
+function renderStaff(id, notes, chord = false) {
+  const target = byId(id);
+  target.innerHTML = "";
+  const V = window.Vex && (window.Vex.Flow || window.Vex);
+  if (V && V.Renderer && V.StaveNote) {
+    try {
+      const width = 700,
+        height = 205;
+      const renderer = new V.Renderer(target, V.Renderer.Backends.SVG);
+      renderer.resize(width, height);
+      const context = renderer.getContext();
+      const stave = new V.Stave(5, 20, width - 10);
+      stave.addClef("treble");
+      stave.setContext(context).draw();
+      function vexNote(group) {
+        const tickable = new V.StaveNote({
+          clef: "treble",
+          keys: group.map(
+            (note) =>
+              `${note.name.toLowerCase()}/${writtenOctave(note.name, note.midi)}`,
+          ),
+          duration: chord ? "w" : "q",
         });
-      });
-    }
-
-    ["interval-select", "interval-root-select"].forEach((id) => {
-      document.getElementById(id)?.addEventListener("change", updateIntervalSection);
-    });
-    ["chord-root-select", "chord-type-select", "chord-inversion-select"].forEach((id) => {
-      document.getElementById(id)?.addEventListener("change", updateChordSection);
-    });
-    ["seventh-root-select", "seventh-type-select"].forEach((id) => {
-      document.getElementById(id)?.addEventListener("change", updateSeventhSection);
-    });
-    ["scale-root-select", "scale-type-select"].forEach((id) => {
-      document.getElementById(id)?.addEventListener("change", updateScaleSection);
-    });
-
-    document.querySelectorAll("[data-hand]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-hand]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        updateScaleSection();
-      });
-    });
-
-    document.querySelectorAll("[data-interval-mode]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-interval-mode]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-      });
-    });
-
-    document.querySelectorAll("[data-chord-play]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-chord-play]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-      });
-    });
-
-    document.querySelectorAll("[data-notes-label]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-notes-label]").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.labelMode = btn.dataset.notesLabel;
-        renderPianoKeyboard("notes-piano", {
-          startMidi: 48,
-          endMidi: 72,
-          showShortcuts: state.showShortcuts
+        group.forEach((note, index) => {
+          const acc = parseNote(note.name).accidental;
+          if (acc) tickable.addModifier(new V.Accidental(acc), index);
         });
-      });
-    });
-
-    document.getElementById("btn-octave-up")?.addEventListener("click", () => {
-      renderPianoKeyboard("notes-piano", { startMidi: 60, endMidi: 84 });
-      const lbl = document.getElementById("current-octave-label");
-      if (lbl) lbl.textContent = "C4 — B5 (1-я и 2-я)";
-    });
-    document.getElementById("btn-octave-down")?.addEventListener("click", () => {
-      renderPianoKeyboard("notes-piano", { startMidi: 48, endMidi: 72 });
-      const lbl = document.getElementById("current-octave-label");
-      if (lbl) lbl.textContent = "C3 — B4 (Малая и 1-я)";
-    });
-
-    document.getElementById("sidebar-tg-card")?.addEventListener("click", () => {
-      location.hash = "#telegram";
-    });
-    document.getElementById("topbar-tg-btn")?.addEventListener("click", () => {
-      location.hash = "#telegram";
-    });
-    document.getElementById("auto-detect-chat-id-btn")?.addEventListener("click", autoDetectTelegramChatId);
-    document.getElementById("save-tg-settings-btn")?.addEventListener("click", () => {
-      const input = document.getElementById("tg-chat-id-input");
-      if (input) tgSettings.chatId = input.value.trim();
-      const chkCompleted = document.getElementById("tg-send-completed");
-      if (chkCompleted) tgSettings.sendCompleted = chkCompleted.checked;
-      const chkErrors = document.getElementById("tg-send-errors");
-      if (chkErrors) tgSettings.sendErrors = chkErrors.checked;
-      const chkStreaks = document.getElementById("tg-send-streaks");
-      if (chkStreaks) tgSettings.sendStreaks = chkStreaks.checked;
-      const chkSummary = document.getElementById("tg-send-summary");
-      if (chkSummary) tgSettings.sendSummary = chkSummary.checked;
-
-      saveTgSettings();
-      updateTelegramStatusUI();
-      alert("✅ Настройки Telegram сохранены!");
-    });
-
-    document.getElementById("test-tg-message-btn")?.addEventListener("click", async () => {
-      const res = await sendTelegramMessage(
-        `🎹 <b>Тестовое сообщение из «Ладно · Фортепиано»!</b>\n` +
-        `Связь установлена отлично. Все отчёты о выполненных упражнениях и разбор ошибок будут оперативно приходить сюда! ✨`
+        return tickable;
+      }
+      const tickables = chord
+        ? [vexNote(notes)]
+        : notes.map((note) => vexNote([note]));
+      V.Formatter.FormatAndDraw(context, stave, tickables);
+      const svg = target.querySelector("svg");
+      if (svg) {
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("aria-hidden", "true");
+        svg.style.width = "100%";
+        svg.style.height = "auto";
+      }
+      return;
+    } catch (error) {
+      console.warn(
+        "Не удалось отрисовать VexFlow, используем запасной SVG.",
+        error,
       );
-      if (res.success) {
-        alert("✅ Тестовое сообщение доставлено в твой Telegram!");
-      } else {
-        alert("Ошибка отправки: " + (res.reason || "проверьте ID"));
+      target.innerHTML = "";
+    }
+  }
+  renderFallbackStaff(target, notes, chord);
+}
+function renderFallbackStaff(target, notes, chord) {
+  const width = 700,
+    height = 175,
+    bottom = 95;
+  const parts = [
+    `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`,
+  ];
+  for (let i = 0; i < 5; i++)
+    parts.push(
+      `<line x1="10" x2="690" y1="${55 + i * 10}" y2="${55 + i * 10}" stroke="#a2aa9e" stroke-width="1"/>`,
+    );
+  parts.push(
+    '<text x="24" y="99" fill="#344e3d" font-family="serif" font-size="56">𝄞</text>',
+  );
+  notes.forEach((note, i) => {
+    const parsed = parseNote(note.name),
+      octave = writtenOctave(note.name, note.midi);
+    const index = octave * 7 + LETTERS.indexOf(parsed.letter);
+    const y = bottom - (index - (4 * 7 + 2)) * 5;
+    const x = chord
+      ? 230 + (i % 2) * 2
+      : 104 + i * (565 / Math.max(1, notes.length - 1));
+    for (let ledger = 105; ledger <= y; ledger += 10)
+      parts.push(
+        `<line x1="${x - 12}" x2="${x + 12}" y1="${ledger}" y2="${ledger}" stroke="#526455"/>`,
+      );
+    for (let ledger = 45; ledger >= y; ledger -= 10)
+      parts.push(
+        `<line x1="${x - 12}" x2="${x + 12}" y1="${ledger}" y2="${ledger}" stroke="#526455"/>`,
+      );
+    if (parsed.accidental)
+      parts.push(
+        `<text x="${x - 15}" y="${y + 5}" text-anchor="end" fill="#344e3d" font-family="serif" font-size="16">${escapeHTML(prettyNote(parsed.accidental))}</text>`,
+      );
+    parts.push(
+      `<ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.5" transform="rotate(-15 ${x} ${y})" fill="${chord ? "#fafbf7" : "#304c39"}" stroke="#304c39" stroke-width="1.5"/>`,
+    );
+    if (!chord)
+      parts.push(
+        `<line x1="${x + 6}" y1="${y}" x2="${x + 6}" y2="${y - 31}" stroke="#304c39" stroke-width="1.4"/>`,
+      );
+  });
+  parts.push("</svg>");
+  target.innerHTML = parts.join("");
+}
+
+/* 01. Все ноты, фильтр октавы и задание на название. */
+let notesMode = "all";
+let notesQuiz = null;
+function renderNotes() {
+  const octave = byId("notes-octave").value;
+  const root = byId("notes-root").value;
+  const scale = getScale(byId("notes-scale").value);
+  const pcs = new Set(scalePcs(root, scale));
+  const names = notesMode === "scale" ? nameMap(scaleNames(root, scale)) : {};
+  renderBoard("notes-board", {
+    showAll: notesMode === "all",
+    names,
+    rootPc: notesMode === "scale" ? parseNote(root).pc : null,
+    activeFilter: (p) =>
+      (octave === "all" || midiOctave(p.midi) === Number(octave)) &&
+      (notesMode === "all" || pcs.has(p.pc)),
+    status: "notes-status",
+  });
+}
+function newNotesQuiz() {
+  const string = Math.floor(Math.random() * 6),
+    fret = Math.floor(Math.random() * 13);
+  const midi = STRINGS[string].midi + fret;
+  notesQuiz = {
+    string,
+    fret,
+    midi,
+    pc: mod(midi),
+    key: string + ":" + fret,
+    answered: false,
+  };
+  setFeedback("notes-feedback", "Выбери один из вариантов.");
+  byId("notes-quiz-status").textContent = "Нажми на ноту ♫";
+  renderNotesQuiz();
+  const pool = CHROMATIC.map((name, pc) => ({
+    value: pc,
+    label: prettyNote(name),
+  }));
+  answerButtons(
+    "notes-answers",
+    makeOptions(pool[notesQuiz.pc], pool),
+    notesQuiz.pc,
+    (correct) => {
+      notesQuiz.answered = true;
+      recordResult("notes", correct);
+      const answer = prettyNote(CHROMATIC[notesQuiz.pc]);
+      setFeedback(
+        "notes-feedback",
+        correct
+          ? `Верно! Это ${answer}.`
+          : `Не совсем. Правильный ответ: ${answer}.`,
+        correct ? "success" : "error",
+      );
+      renderNotesQuiz();
+    },
+  );
+}
+function renderNotesQuiz() {
+  renderBoard("notes-quiz-board", {
+    activePositions: [notesQuiz.key],
+    rootPositions: [notesQuiz.key],
+    questionKey: notesQuiz.answered ? null : notesQuiz.key,
+    status: "notes-quiz-status",
+  });
+}
+
+/* 02. Интервалы: наглядный пример, построение точной высоты и слуховой тест. */
+let intervalBuildQuiz = null;
+let intervalEarQuiz = null;
+function renderInterval() {
+  const root = byId("interval-root").value,
+    interval = getInterval(byId("interval-type").value);
+  const first = rootMidi(root),
+    second = first + interval.semitones;
+  const other = spellInterval(root, interval.semitones, interval.steps);
+  const a = bestPosition(first),
+    b = bestPosition(second);
+  const names = nameMap([root, other]);
+  renderBoard("interval-board", {
+    activePositions: [a.key, b.key],
+    rootPositions: [a.key],
+    names,
+    status: "interval-status",
+  });
+  byId("interval-summary").textContent =
+    `${writtenNote(root, first)} → ${writtenNote(other, second)} · ${semiText(interval.semitones)}`;
+  byId("interval-description").textContent =
+    `${interval.name}: ${interval.character}. Знаки у нот показаны явно, без ключевых знаков.`;
+  renderStaff("interval-staff", [
+    { midi: first, name: root },
+    { midi: second, name: other },
+  ]);
+}
+function newIntervalBuild() {
+  const interval = randomItem(INTERVALS);
+  const possible = [];
+  for (let s = 2; s < 6; s++)
+    for (let fret = 0; fret <= 7; fret++) {
+      const midi = STRINGS[s].midi + fret;
+      if (positionsForMidi(midi + interval.semitones).length)
+        possible.push({ string: s, fret, midi, key: s + ":" + fret });
+    }
+  const base = randomItem(possible),
+    root = CHROMATIC[mod(base.midi)];
+  const answerName = spellInterval(root, interval.semitones, interval.steps);
+  intervalBuildQuiz = {
+    interval,
+    base,
+    root,
+    answerName,
+    target: base.midi + interval.semitones,
+    answered: false,
+  };
+  byId("interval-build-prompt").textContent =
+    `Построй «${interval.name}» вверх от ${writtenNote(root, base.midi)}.`;
+  setFeedback("interval-build-feedback", "Нажми на вторую ноту.");
+  byId("interval-quiz-status").textContent = "Нажми на ноту ♫";
+  renderIntervalBuild();
+}
+function renderIntervalBuild() {
+  const q = intervalBuildQuiz;
+  const correctPosition = bestPosition(q.target);
+  renderBoard("interval-quiz-board", {
+    showAll: true,
+    activePositions: q.answered
+      ? [q.base.key, correctPosition.key]
+      : [q.base.key],
+    rootPositions: [q.base.key],
+    names: nameMap([q.root, q.answerName]),
+    status: "interval-quiz-status",
+    onPick: (position) => {
+      if (q.answered) return;
+      q.answered = true;
+      const correct = position.midi === q.target;
+      recordResult("intervalBuild", correct);
+      const answer = `${writtenNote(q.answerName, q.target)} (${semiText(q.interval.semitones)}; например, ${describePosition(correctPosition)})`;
+      setFeedback(
+        "interval-build-feedback",
+        correct
+          ? `Верно! ${answer}.`
+          : `Не совсем. Правильный ответ: ${answer}.`,
+        correct ? "success" : "error",
+      );
+      renderIntervalBuild();
+    },
+  });
+}
+function newIntervalEar() {
+  const interval = randomItem(INTERVALS),
+    midi = 48 + Math.floor(Math.random() * 12);
+  intervalEarQuiz = { interval, midi };
+  const pool = INTERVALS.map((item) => ({ value: item.id, label: item.name }));
+  const correctOption = pool.find((item) => item.value === interval.id);
+  answerButtons(
+    "ear-answers",
+    makeOptions(correctOption, pool),
+    interval.id,
+    (correct) => {
+      recordResult("intervalEar", correct);
+      setFeedback(
+        "ear-feedback",
+        correct
+          ? `Верно! ${interval.name} — ${semiText(interval.semitones)}.`
+          : `Не совсем. Правильный ответ: ${interval.name}, ${semiText(interval.semitones)}.`,
+        correct ? "success" : "error",
+      );
+    },
+  );
+  setFeedback("ear-feedback", "Сначала послушай, затем выбери ответ.");
+}
+function setIntervalTask(mode) {
+  intervalTaskMode = mode;
+  byId("interval-build-area").hidden = mode !== "build";
+  byId("interval-ear-area").hidden = mode !== "ear";
+  setSwitch("[data-interval-task]", "data-interval-task", mode);
+  showStats();
+}
+
+/* 03. Трезвучия и выбор трёх различных звуков. */
+let currentTriad = null;
+let triadQuiz = null;
+function renderTriad(resetShape = false) {
+  const root = byId("triad-root").value,
+    type = getTriad(byId("triad-type").value);
+  currentTriad = makeChord(root, type, Number(byId("triad-inversion").value));
+  const voicings = findVoicings(currentTriad.notes);
+  if (resetShape)
+    fillSelect(
+      "triad-shape",
+      voicings.map((_, i) => ({ value: String(i), label: `Вариант ${i + 1}` })),
+      "0",
+    );
+  const positionSet =
+    voicings[Number(byId("triad-shape").value)] || voicings[0] || [];
+  currentTriad.voicedNotes = positionSet.length
+    ? voicedNotes(positionSet, currentTriad.names)
+    : currentTriad.notes;
+  renderBoard("triad-board", {
+    activePositions: positionSet.map((p) => p.key),
+    rootPc: parseNote(root).pc,
+    names: nameMap(currentTriad.names),
+    status: "triad-status",
+  });
+  byId("triad-summary").textContent =
+    `${currentTriad.symbol} · ${currentTriad.voicedNotes.map((n) => prettyNote(n.name)).join(" – ")}`;
+  byId("triad-description").textContent =
+    type.description + " Нижняя нота определяет обращение.";
+  byId("triad-position").textContent = positionSet.length
+    ? positionSet.map(describePosition).join(" · ")
+    : "Для этого регистра не нашлось аппликатуры на разных струнах.";
+  renderStaff("triad-staff", currentTriad.voicedNotes, true);
+}
+function newTriadQuiz() {
+  const root = randomItem(ROOTS),
+    type = randomItem(TRIADS);
+  triadQuiz = {
+    chord: makeChord(root, type),
+    selected: new Set(),
+    answered: false,
+  };
+  byId("triad-quiz-prompt").textContent =
+    `Собери ${type.name.toLowerCase()} трезвучие от ${prettyNote(root)}.`;
+  byId("triad-check").disabled = false;
+  byId("triad-quiz-status").textContent = "Нажми на ноту ♫";
+  setFeedback(
+    "triad-feedback",
+    "Нажимай на ноты, чтобы выбрать или отменить их.",
+  );
+  renderTriadQuiz();
+}
+function selectedDescription(selection, names = {}) {
+  if (!selection.size) return "пока ничего";
+  return [...selection]
+    .map((key) => {
+      const [s, fret] = key.split(":").map(Number),
+        midi = STRINGS[s].midi + fret;
+      return writtenNote(names[mod(midi)] || CHROMATIC[mod(midi)], midi);
+    })
+    .join(" · ");
+}
+function renderTriadQuiz() {
+  const q = triadQuiz,
+    rootPc = parseNote(q.chord.root).pc;
+  renderBoard("triad-quiz-board", {
+    showAll: true,
+    activeFilter: (p) => p.pc === rootPc,
+    rootPc,
+    selected: q.selected,
+    status: "triad-quiz-status",
+    onPick: (position) => {
+      if (q.answered) return;
+      if (q.selected.has(position.key)) q.selected.delete(position.key);
+      else q.selected.add(position.key);
+      renderTriadQuiz();
+    },
+  });
+  byId("triad-picked").textContent = selectedDescription(q.selected);
+}
+function checkTriadQuiz() {
+  const q = triadQuiz;
+  if (q.answered) return;
+  if (!q.selected.size) {
+    setFeedback("triad-feedback", "Сначала выбери три ноты на грифе.");
+    return;
+  }
+  const chosen = [...q.selected].map((key) => {
+    const [s, f] = key.split(":").map(Number);
+    return mod(STRINGS[s].midi + f);
+  });
+  const correct =
+    chosen.length === 3 &&
+    unique(chosen).length === 3 &&
+    q.chord.pcs.every((pc) => chosen.includes(pc));
+  q.answered = true;
+  byId("triad-check").disabled = true;
+  recordResult("triad", correct);
+  const answer = q.chord.names.map(prettyNote).join(" – ");
+  setFeedback(
+    "triad-feedback",
+    correct
+      ? `Верно! ${q.chord.symbol}: ${answer}.`
+      : `Не совсем. Правильные звуки ${q.chord.symbol}: ${answer}. Энгармонические ноты, например E♯ и F, звучат одинаково.`,
+    correct ? "success" : "error",
+  );
+}
+
+/* 04. Септаккорды: аппликатуры и определение по грифу или звучанию. */
+let currentSeventh = null;
+let seventhQuiz = null;
+function renderSeventh(resetShape = false) {
+  const root = byId("seventh-root").value,
+    type = getSeventh(byId("seventh-type").value);
+  currentSeventh = makeChord(root, type);
+  const voicings = findVoicings(currentSeventh.notes);
+  if (resetShape)
+    fillSelect(
+      "seventh-shape",
+      voicings.map((_, i) => ({ value: String(i), label: `Вариант ${i + 1}` })),
+      "0",
+    );
+  const positionSet =
+    voicings[Number(byId("seventh-shape").value)] || voicings[0] || [];
+  currentSeventh.voicedNotes = positionSet.length
+    ? voicedNotes(positionSet, currentSeventh.names)
+    : currentSeventh.notes;
+  renderBoard("seventh-board", {
+    activePositions: positionSet.map((p) => p.key),
+    rootPc: parseNote(root).pc,
+    names: nameMap(currentSeventh.names),
+    status: "seventh-status",
+  });
+  byId("seventh-summary").textContent =
+    `${currentSeventh.symbol} · ${currentSeventh.names.map(prettyNote).join(" – ")}`;
+  byId("seventh-description").textContent = type.description;
+  byId("seventh-position").textContent = positionSet.length
+    ? positionSet.map(describePosition).join(" · ")
+    : "Для этого регистра не нашлось аппликатуры на разных струнах.";
+  renderStaff("seventh-staff", currentSeventh.voicedNotes, true);
+}
+function newSeventhQuiz() {
+  const root = randomItem(ROOTS),
+    type = randomItem(SEVENTHS),
+    chord = makeChord(root, type);
+  const positions =
+    findVoicings(chord.notes)[0] ||
+    chord.notes.map((note) => bestPosition(note.midi));
+  seventhQuiz = {
+    chord,
+    positions,
+    voicedNotes: voicedNotes(positions, chord.names),
+  };
+  byId("seventh-quiz-prompt").textContent =
+    `Какой септаккорд построен от ${prettyNote(root)}?`;
+  byId("seventh-quiz-status").textContent = "Нажми на ноту ♫";
+  renderBoard("seventh-quiz-board", {
+    activePositions: positions.map((p) => p.key),
+    rootPc: parseNote(root).pc,
+    names: nameMap(chord.names),
+    status: "seventh-quiz-status",
+  });
+  const pool = SEVENTHS.map((item) => ({ value: item.id, label: item.name }));
+  const correctOption = pool.find((item) => item.value === type.id);
+  answerButtons(
+    "seventh-answers",
+    makeOptions(correctOption, pool),
+    type.id,
+    (correct) => {
+      recordResult("seventh", correct);
+      const answer = `${type.name}: ${chord.names.map(prettyNote).join(" – ")}. ${type.description}`;
+      setFeedback(
+        "seventh-feedback",
+        correct ? `Верно! ${answer}` : `Не совсем. Правильный ответ: ${answer}`,
+        correct ? "success" : "error",
+      );
+    },
+  );
+  setFeedback("seventh-feedback", "Выбери тип аккорда.");
+}
+
+/* 05. Гаммы: правильные написания ступеней и один выбранный экземпляр каждой ноты. */
+let scaleMode = "scale";
+let scaleQuiz = null;
+function renderScale() {
+  const root = byId("scale-root").value,
+    scale = getScale(byId("scale-type").value);
+  const names = scaleNames(root, scale),
+    notes = scaleNotes(root, scale);
+  renderBoard("scale-board", {
+    showAll: scaleMode === "all",
+    activePcs: scalePcs(root, scale),
+    rootPc: parseNote(root).pc,
+    names: nameMap(names),
+    status: "scale-status",
+  });
+  byId("scale-formula").textContent = scale.formula;
+  byId("scale-name").textContent =
+    `${prettyNote(root)} · ${scale.name.toLowerCase()}`;
+  byId("scale-description").textContent = scale.description;
+  byId("scale-summary").textContent = notes
+    .map((n) => prettyNote(n.name))
+    .join(" – ");
+  renderStaff("scale-staff", notes);
+}
+function playScale() {
+  const root = byId("scale-root").value,
+    scale = getScale(byId("scale-type").value);
+  const up = scaleNotes(root, scale),
+    downScale = scale.id === "melodicMinor" ? getScale("naturalMinor") : scale;
+  const down = scaleNotes(root, downScale).reverse().slice(1);
+  const notes = [...up, ...down];
+  playEvents(
+    notes.map((note, i) => ({
+      notes: [note.midi],
+      time: i * 0.32,
+      duration: 0.27,
+      velocity: 0.7,
+    })),
+  );
+}
+function newScaleQuiz() {
+  const root = byId("scale-root").value,
+    scale = getScale(byId("scale-type").value);
+  scaleQuiz = {
+    root,
+    scale,
+    pcs: scalePcs(root, scale),
+    names: scaleNames(root, scale),
+    selected: new Set(),
+    answered: false,
+  };
+  byId("scale-quiz-prompt").textContent =
+    `Найди все звуки: ${prettyNote(root)} · ${scale.name.toLowerCase()}.`;
+  byId("scale-check").disabled = false;
+  byId("scale-quiz-status").textContent = "Нажми на ноту ♫";
+  setFeedback("scale-feedback", "Выбирай ноты на грифе.");
+  renderScaleQuiz();
+}
+function renderScaleQuiz() {
+  const q = scaleQuiz,
+    rootPc = parseNote(q.root).pc,
+    names = nameMap(q.names);
+  renderBoard("scale-quiz-board", {
+    showAll: true,
+    activeFilter: (p) => p.pc === rootPc,
+    rootPc,
+    names,
+    selected: q.selected,
+    status: "scale-quiz-status",
+    onPick: (position) => {
+      if (q.answered) return;
+      const existing = [...q.selected].find((key) => {
+        const [s, fret] = key.split(":").map(Number);
+        return mod(STRINGS[s].midi + fret) === position.pc;
+      });
+      if (existing) q.selected.delete(existing);
+      if (existing !== position.key) q.selected.add(position.key);
+      renderScaleQuiz();
+    },
+  });
+  byId("scale-picked").textContent =
+    selectedDescription(q.selected, names) +
+    ` · ${q.selected.size} из ${q.pcs.length}`;
+}
+function checkScaleQuiz() {
+  const q = scaleQuiz;
+  if (q.answered) return;
+  if (!q.selected.size) {
+    setFeedback("scale-feedback", "Сначала выбери ноты гаммы на грифе.");
+    return;
+  }
+  const chosen = [...q.selected].map((key) => {
+    const [s, f] = key.split(":").map(Number);
+    return mod(STRINGS[s].midi + f);
+  });
+  const correct =
+    chosen.length === q.pcs.length && q.pcs.every((pc) => chosen.includes(pc));
+  q.answered = true;
+  byId("scale-check").disabled = true;
+  recordResult("scale", correct);
+  const answer = q.names.map(prettyNote).join(" – ");
+  setFeedback(
+    "scale-feedback",
+    correct
+      ? `Верно! Все звуки найдены: ${answer}.`
+      : `Не совсем. Правильные ноты гаммы: ${answer}. Лишние ноты не входят в ответ.`,
+    correct ? "success" : "error",
+  );
+}
+
+/* 06. Квинтовый круг, ключевые знаки и модуляция к доминанте. */
+let selectedKey = 0;
+let selectedKeyVariant = null;
+let keyDisplayMode = "major";
+function keyTonic(key) {
+  return keyDisplayMode === "major" ? key.major : key.minor.slice(0, -1);
+}
+function activeKey() {
+  return selectedKeyVariant || CIRCLE[selectedKey];
+}
+function keySignText(key) {
+  if (!key.count) return "Нет знаков";
+  return KEY_ORDER[key.kind].slice(0, key.count).map(prettyNote).join(" · ");
+}
+function keyCountText(key) {
+  if (!key.count) return "0 знаков";
+  const sign =
+    key.kind === "#"
+      ? plural(key.count, ["диез", "диеза", "диезов"])
+      : plural(key.count, ["бемоль", "бемоля", "бемолей"]);
+  return `${key.count} ${sign}`;
+}
+function renderCircle() {
+  const key = activeKey(),
+    parts = [
+      '<svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Квинтовый круг">',
+    ];
+  parts.push(
+    '<circle cx="190" cy="190" r="140" fill="none" stroke="#dce6d7" stroke-width="2"/><circle cx="190" cy="190" r="98" fill="#f4f8ec" stroke="#e3ebdb"/>',
+  );
+  parts.push(
+    `<text x="190" y="169" text-anchor="middle" fill="#9aac99" font-family="Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.1">ТОНАЛЬНОСТЬ</text><text x="190" y="203" text-anchor="middle" fill="#436d4d" font-family="Georgia, serif" font-size="30">${escapeHTML(prettyNote(keyTonic(key)) + (keyDisplayMode === "minor" ? "m" : ""))}</text><text x="190" y="225" text-anchor="middle" fill="#91a78c" font-family="Arial, sans-serif" font-size="10">${escapeHTML(keyCountText(key))}</text>`,
+  );
+  CIRCLE.forEach((item, i) => {
+    const angle = (i * Math.PI) / 6;
+    const x = 190 + 140 * Math.sin(angle),
+      y = 190 - 140 * Math.cos(angle),
+      active = i === selectedKey;
+    const shown = active && selectedKeyVariant ? selectedKeyVariant : item;
+    const alternative = ENHARMONIC_KEYS.find((k) => k.circleIndex === i);
+    const majorLabel = alternative
+      ? prettyNote(item.major) + "/" + prettyNote(alternative.major)
+      : prettyNote(item.major);
+    const minor = prettyNote(shown.minor.slice(0, -1)) + "m";
+    parts.push(
+      `<g class="key-node" data-key-index="${i}" role="button" tabindex="0" aria-label="${escapeHTML(majorLabel)} мажор, параллельный ${escapeHTML(minor)}" aria-pressed="${active}"><circle cx="${x}" cy="${y}" r="25" fill="${active ? "#3d6e52" : "#fffefa"}" stroke="${active ? "#3d6e52" : "#d8e4d3"}"/><text x="${x}" y="${y - 1}" text-anchor="middle" fill="${active ? "#fff" : "#476a50"}" font-family="Arial, sans-serif" font-size="${alternative ? 9 : 12}" font-weight="700">${escapeHTML(majorLabel)}</text><text x="${x}" y="${y + 12}" text-anchor="middle" fill="${active ? "#d3e7c2" : "#9aab97"}" font-family="Arial, sans-serif" font-size="9">${escapeHTML(minor)}</text></g>`,
+    );
+  });
+  parts.push("</svg>");
+  const circle = byId("key-circle");
+  const focused = circle.contains(document.activeElement)
+    ? document.activeElement.getAttribute("data-key-index")
+    : null;
+  circle.innerHTML = parts.join("");
+  function activate(target) {
+    const node = target.closest("[data-key-index]");
+    if (!node) return;
+    selectedKey = Number(node.dataset.keyIndex);
+    selectedKeyVariant = null;
+    renderKey();
+  }
+  circle.onclick = (event) => activate(event.target);
+  circle.onkeydown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activate(event.target);
+    }
+  };
+  if (focused !== null)
+    circle
+      .querySelector(`[data-key-index="${selectedKey}"]`)
+      ?.focus({ preventScroll: true });
+}
+function renderKey() {
+  const key = activeKey(),
+    tonic = keyTonic(key),
+    scale = getScale(keyDisplayMode === "major" ? "major" : "naturalMinor"),
+    names = scaleNames(tonic, scale);
+  renderCircle();
+  byId("key-title").textContent =
+    prettyNote(tonic) + (keyDisplayMode === "major" ? " мажор" : " минор");
+  byId("key-relative").textContent =
+    keyDisplayMode === "major"
+      ? `Параллельная тональность: ${prettyNote(key.minor.slice(0, -1))} минор`
+      : `Параллельная тональность: ${prettyNote(key.major)} мажор`;
+  byId("key-notes-label").textContent =
+    keyDisplayMode === "major" ? "НОТЫ МАЖОРА" : "НОТЫ МИНОРА";
+  const alternate = ENHARMONIC_KEYS.find(
+    (item) => item.circleIndex === selectedKey,
+  );
+  const variants = alternate ? [CIRCLE[selectedKey], alternate] : [];
+  const variantContainer = byId("key-enharmonic");
+  variantContainer.innerHTML = variants
+    .map(
+      (item) =>
+        `<button type="button" data-major="${escapeHTML(item.major)}" class="${item.major === key.major ? "active" : ""}" aria-pressed="${item.major === key.major}">${escapeHTML(prettyNote(keyDisplayMode === "major" ? item.major : item.minor.slice(0, -1)))} ${keyDisplayMode === "major" ? "мажор" : "минор"}</button>`,
+    )
+    .join("");
+  variantContainer.querySelectorAll("button").forEach((button) =>
+    button.addEventListener("click", () => {
+      selectedKeyVariant =
+        variants.find((item) => item.major === button.dataset.major) || null;
+      renderKey();
+    }),
+  );
+  byId("key-sign-count").textContent = keyCountText(key);
+  byId("key-signs").textContent = keySignText(key);
+  byId("key-notes").textContent = names.map(prettyNote).join(" · ");
+  renderBoard("key-board", {
+    activePcs: scalePcs(tonic, scale),
+    rootPc: parseNote(tonic).pc,
+    names: nameMap(names),
+    status: "key-status",
+  });
+}
+function newKeyQuiz() {
+  if (keyTaskMode === "signs") {
+    const key = randomItem([...CIRCLE, ...ENHARMONIC_KEYS]),
+      correctOption = { value: key.count, label: String(key.count) };
+    const pool = Array.from({ length: 8 }, (_, i) => ({
+      value: i,
+      label: String(i),
+    }));
+    byId("key-quiz-prompt").textContent =
+      `Сколько ключевых знаков в ${prettyNote(key.major)} мажоре?`;
+    answerButtons(
+      "key-answers",
+      makeOptions(correctOption, pool),
+      key.count,
+      (correct) => {
+        recordResult("keySigns", correct);
+        const explanation = `${prettyNote(key.major)} мажор: ${keyCountText(key)}${key.count ? " — " + keySignText(key) : ""}.`;
+        setFeedback(
+          "key-feedback",
+          correct
+            ? `Верно! ${explanation}`
+            : `Не совсем. Правильный ответ: ${explanation}`,
+          correct ? "success" : "error",
+        );
+      },
+    );
+  } else {
+    // Исключаем F# → Db: звучащая квинта есть, но запись меняется энгармонически.
+    const index = randomItem([0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11]),
+      next = (index + 1) % 12;
+    const key = CIRCLE[index],
+      target = CIRCLE[next];
+    const pool = CIRCLE.map((item, i) => ({
+      value: i,
+      label: prettyNote(item.major) + " мажор",
+    })).filter((item) => item.value !== index);
+    const correctOption = pool.find((item) => item.value === next);
+    byId("key-quiz-prompt").textContent =
+      `К какой мажорной тональности ведёт квинта вверх от ${prettyNote(key.major)} (модуляция к доминанте)?`;
+    answerButtons(
+      "key-answers",
+      makeOptions(correctOption, pool),
+      next,
+      (correct) => {
+        recordResult("keyMod", correct);
+        const explanation = `${prettyNote(target.major)} мажор: следующая тональность по часовой стрелке. ${prettyNote(key.major)} → ${prettyNote(target.major)} — чистая квинта; у них много общих звуков.`;
+        setFeedback(
+          "key-feedback",
+          correct
+            ? `Верно! ${explanation}`
+            : `Не совсем. Правильный ответ: ${explanation}`,
+          correct ? "success" : "error",
+        );
+      },
+    );
+  }
+  setFeedback("key-feedback", "Выбери ответ.");
+}
+function setKeyTask(mode) {
+  keyTaskMode = mode;
+  setSwitch("[data-key-task]", "data-key-task", mode);
+  newKeyQuiz();
+  showStats();
+}
+
+/* 07. Диатонические аккорды мажора и их учебные гармонические функции. */
+let harmonyIndex = 0;
+let harmonyChords = [];
+let harmonyQuizAnswered = false;
+function renderHarmony() {
+  const root = byId("harmony-root").value,
+    progression = getProgression(byId("harmony-progression").value);
+  harmonyChords = progressionChords(root, progression).map((chord) => {
+    const positions = findVoicings(chord.notes)[0] || [];
+    return {
+      ...chord,
+      positions,
+      voicedNotes: positions.length
+        ? voicedNotes(positions, chord.names)
+        : chord.notes,
+    };
+  });
+  const row = byId("harmony-chords");
+  row.innerHTML = harmonyChords
+    .map(
+      (chord, i) =>
+        `<button type="button" class="chord-pill ${i === harmonyIndex ? "active" : ""}" data-chord-index="${i}" aria-pressed="${i === harmonyIndex}"><small>${chord.roman} · ${chord.fn}</small><strong>${escapeHTML(chord.symbol)}</strong><span>${escapeHTML(chord.names.map(prettyNote).join(" · "))}</span></button>`,
+    )
+    .join("");
+  row.querySelectorAll("[data-chord-index]").forEach((button) =>
+    button.addEventListener("click", () => {
+      harmonyIndex = Number(button.dataset.chordIndex);
+      renderHarmony();
+    }),
+  );
+  const chord = harmonyChords[harmonyIndex],
+    positions = chord.positions;
+  renderBoard("harmony-board", {
+    activePositions: positions.map((p) => p.key),
+    rootPc: parseNote(chord.root).pc,
+    names: nameMap(chord.names),
+    status: "harmony-status",
+  });
+  byId("harmony-detail").textContent =
+    `${chord.roman} · ${chord.symbol} (${chord.fn}): ${chord.names.map(prettyNote).join(" – ")}. ${positions.map(describePosition).join(" · ")}.`;
+}
+function playProgression(chords) {
+  playEvents(
+    chords.map((chord, i) => ({
+      notes: (chord.voicedNotes || chord.notes).map((n) => n.midi),
+      time: i * 1.35,
+      duration: 1.15,
+      velocity: 0.65,
+    })),
+  );
+}
+function newHarmonyQuiz() {
+  harmonyQuizAnswered = false;
+  const root = byId("harmony-root").value;
+  const chords = Array.from({ length: 7 }, (_, i) => chordOfDegree(root, i));
+  byId("harmony-quiz-prompt").textContent =
+    `В ${prettyNote(root)} мажоре расставь аккорды по функциям T – S – D – T.`;
+  byId("harmony-slots").innerHTML = ["T", "S", "D", "T"]
+    .map(
+      (fn, i) =>
+        `<div class="function-slot"><label for="function-${i}">${i + 1} · ${fn}</label><select id="function-${i}" aria-label="Аккорд для функции ${fn}, позиция ${i + 1}"><option value="">Выбери аккорд</option>${chords.map((chord) => `<option value="${chord.degree}">${escapeHTML(chord.roman + " · " + chord.symbol)}</option>`).join("")}</select></div>`,
+    )
+    .join("");
+  byId("harmony-check").disabled = false;
+  setFeedback("harmony-feedback", "Выбери аккорд в каждом поле.");
+}
+function checkHarmonyQuiz() {
+  if (harmonyQuizAnswered) return;
+  const selects = [...byId("harmony-slots").querySelectorAll("select")];
+  if (selects.some((select) => select.value === "")) {
+    setFeedback(
+      "harmony-feedback",
+      "Сначала выбери аккорд для каждой функции.",
+    );
+    return;
+  }
+  const required = ["T", "S", "D", "T"];
+  const correct = selects.every(
+    (select, i) => FUNCTIONS[Number(select.value)] === required[i],
+  );
+  harmonyQuizAnswered = true;
+  byId("harmony-check").disabled = true;
+  selects.forEach((select) => {
+    select.disabled = true;
+  });
+  recordResult("harmony", correct);
+  const root = byId("harmony-root").value,
+    chords = Array.from({ length: 7 }, (_, i) => chordOfDegree(root, i));
+  const example = [0, 3, 4, 0].map((i) => chords[i].symbol).join(" – ");
+  const groups = `T: ${[0, 2, 5].map((i) => chords[i].symbol).join(", ")}; S: ${[1, 3].map((i) => chords[i].symbol).join(", ")}; D: ${[4, 6].map((i) => chords[i].symbol).join(", ")}.`;
+  setFeedback(
+    "harmony-feedback",
+    correct
+      ? `Верно! Все функции на месте. Один из вариантов: ${example}.`
+      : `Не совсем. Например: ${example}. В этой модели ${groups}`,
+    correct ? "success" : "error",
+  );
+}
+
+/* 08. Конструктор: четыре аккорда и 16 четвертей мелодии. */
+let compositionSeed = 0;
+let compositionData = null;
+function createMotif(root, scale, chords, seed) {
+  const pool = scaleNotes(root, scale); // Включаем верхнюю тонику.
+  return chords.map((chord, bar) => {
+    const candidates = pool
+      .map((note, i) => (chord.pcs.includes(mod(note.midi)) ? i : -1))
+      .filter((i) => i >= 0);
+    const matching = candidates.length ? candidates : [0];
+    const first = matching[mod(bar + seed, matching.length)];
+    const third = matching[mod(bar + seed + 1, matching.length)];
+    const direction = (bar + seed) % 2 ? -1 : 1;
+    const neighbor = (i, d) => Math.min(pool.length - 1, Math.max(0, i + d));
+    const indexes = [
+      first,
+      neighbor(first, direction),
+      third,
+      neighbor(third, -direction),
+    ];
+    if (bar === 3) indexes[3] = 0; // Последний звук — тоника выбранной мелодии.
+    return {
+      chord,
+      notes: indexes.map((i) => pool[i]),
+      hasChordTone: !!candidates.length,
+    };
+  });
+}
+function renderComposition() {
+  const root = byId("composition-root").value,
+    progression = getProgression(byId("composition-progression").value),
+    scale = getScale(byId("composition-scale").value);
+  const chords = progressionChords(root, progression),
+    bars = createMotif(root, scale, chords, compositionSeed);
+  compositionData = { root, scale, chords, bars };
+  byId("composition-hint").textContent = bars.every((bar) => bar.hasChordTone)
+    ? "На 1-й и 3-й долях — звуки текущего аккорда; остальные соединяют их шагами гаммы."
+    : "В выбранной гамме не для каждого аккорда есть общий звук: местами возникнет напряжение. Попробуй мажорную гамму.";
+  byId("composition-motif").innerHTML = bars
+    .map(
+      (bar, i) =>
+        `<div class="motif-bar"><small>ТАКТ ${String(i + 1).padStart(2, "0")} · ${bar.chord.roman}</small><strong>${escapeHTML(bar.chord.symbol)}</strong><span>4 четверти</span><span class="motif-notes">${escapeHTML(bar.notes.map((n) => prettyNote(n.name)).join(" · "))}</span></div>`,
+    )
+    .join("");
+  renderBoard("composition-board", {
+    activePcs: scalePcs(root, scale),
+    rootPc: parseNote(root).pc,
+    names: nameMap(scaleNames(root, scale)),
+    status: "composition-status",
+  });
+}
+function playComposition() {
+  const beat = 0.55,
+    events = [];
+  compositionData.bars.forEach((bar, i) => {
+    const start = i * 4 * beat;
+    events.push({
+      notes: bar.chord.notes.map((n) => n.midi),
+      time: start,
+      duration: beat * 3.75,
+      velocity: 0.48,
+    });
+    bar.notes.forEach((note, j) =>
+      events.push({
+        notes: [note.midi],
+        time: start + j * beat,
+        duration: beat * 0.75,
+        velocity: 0.82,
+      }),
+    );
+  });
+  playEvents(events);
+}
+
+/* Маршруты — обычные якоря: сайт работает при прямом открытии index.html. */
+const VIEW_META = {
+  notes: {
+    label: "Ноты и октавы",
+    eyebrow: "01 / САМОЕ НАЧАЛО",
+    line1: "Музыка начинается",
+    line2: "с одной ноты.",
+    text: "Разберёмся в нотах, найдём их на грифе и услышим, как они звучат. Всё по порядку, без сложных слов.",
+  },
+  intervals: {
+    label: "Интервалы",
+    eyebrow: "02 / МЕЖДУ НОТАМИ",
+    line1: "Расстояние, которое",
+    line2: "можно услышать.",
+    text: "Две ноты могут быть рядом или далеко друг от друга. Научимся измерять и узнавать это расстояние.",
+  },
+  triads: {
+    label: "Трезвучия",
+    eyebrow: "03 / ПЕРВЫЕ АККОРДЫ",
+    line1: "Три ноты.",
+    line2: "Много чувств.",
+    text: "Построим трезвучия по терциям, найдём их обращения и соберём свои первые аккорды на грифе.",
+  },
+  sevenths: {
+    label: "Септаккорды",
+    eyebrow: "04 / НОВАЯ КРАСКА",
+    line1: "Добавь ноту —",
+    line2: "измени настроение.",
+    text: "Знакомимся с септаккордами: от мягкого maj7 до напряжённого G7, который хочет вернуться домой.",
+  },
+  scales: {
+    label: "Гаммы и лады",
+    eyebrow: "05 / КАРТА ЗВУКОВ",
+    line1: "Найди свой",
+    line2: "музыкальный цвет.",
+    text: "Гаммы, пентатоника и лады на одном грифе. Слушай их характер и исследуй ноты в своём темпе.",
+  },
+  keys: {
+    label: "Квинтовый круг",
+    eyebrow: "06 / ВСЁ СВЯЗАНО",
+    line1: "У тональностей",
+    line2: "тоже есть соседи.",
+    text: "Разберём ключевые знаки и увидим, как квинтовый круг помогает переходить между тональностями.",
+  },
+  harmony: {
+    label: "Гармония",
+    eyebrow: "07 / АККОРДЫ ВМЕСТЕ",
+    line1: "Пусть аккорды",
+    line2: "расскажут историю.",
+    text: "Узнаем, зачем музыке опора, движение и напряжение, а затем сложим из них свою последовательность.",
+  },
+  composition: {
+    label: "Композиция",
+    eyebrow: "08 / ВРЕМЯ СОЗДАВАТЬ",
+    line1: "Из нескольких нот",
+    line2: "рождается музыка.",
+    text: "Соедини прогрессию и гамму, послушай небольшой мотив и придумай на его основе свою мелодию.",
+  },
+};
+function showView(requestedName = null) {
+  const requested = requestedName || location.hash.slice(1),
+    name = VIEW_META[requested] ? requested : "notes",
+    meta = VIEW_META[name];
+  document.querySelectorAll(".view").forEach((view) => {
+    view.hidden = view.id !== "view-" + name;
+  });
+  document.querySelectorAll("[data-nav]").forEach((link) => {
+    const active = link.dataset.nav === name;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+  byId("breadcrumb").textContent = meta.label;
+  byId("intro-eyebrow").textContent = meta.eyebrow;
+  byId("intro-title").innerHTML =
+    `${escapeHTML(meta.line1)}<br><em>${escapeHTML(meta.line2)}</em>`;
+  byId("intro-text").textContent = meta.text;
+  byId("intro-number").textContent = String(
+    Object.keys(VIEW_META).indexOf(name) + 1,
+  ).padStart(2, "0");
+  document.title = meta.label + " — Ладно";
+}
+function fillReference() {
+  byId("interval-reference").innerHTML = INTERVALS.map(
+    (item) =>
+      `<div class="reference-item"><span>${escapeHTML(item.name)}</span><strong>${escapeHTML(semiText(item.semitones))}</strong></div>`,
+  ).join("");
+  byId("scale-reference").innerHTML = SCALES.map(
+    (item) =>
+      `<article><h3>${escapeHTML(item.name)}</h3><p class="formula">${escapeHTML(item.formula)}</p><p>${escapeHTML(item.description)}</p></article>`,
+  ).join("");
+}
+function initialiseSelects() {
+  const roots = ROOTS.map((root) => ({ value: root, label: prettyNote(root) }));
+  [
+    "notes-root",
+    "interval-root",
+    "triad-root",
+    "seventh-root",
+    "scale-root",
+    "harmony-root",
+    "composition-root",
+  ].forEach((id) => fillSelect(id, roots, id === "seventh-root" ? "G" : "C"));
+  const scales = SCALES.map((item) => ({ value: item.id, label: item.name }));
+  ["notes-scale", "scale-type", "composition-scale"].forEach((id) =>
+    fillSelect(id, scales, "major"),
+  );
+  fillSelect(
+    "interval-type",
+    INTERVALS.map((item) => ({
+      value: item.id,
+      label: `${item.name} · ${semiText(item.semitones)}`,
+    })),
+    "M3",
+  );
+  fillSelect(
+    "triad-type",
+    TRIADS.map((item) => ({ value: item.id, label: item.name })),
+    "major",
+  );
+  fillSelect(
+    "seventh-type",
+    SEVENTHS.map((item) => ({ value: item.id, label: item.name })),
+    "dom7",
+  );
+  const progressions = PROGRESSIONS.map((item) => ({
+    value: item.id,
+    label: item.name,
+  }));
+  fillSelect("harmony-progression", progressions, "1451");
+  fillSelect("composition-progression", progressions, "1451");
+}
+function bindEvents() {
+  // Перехватываем обычный клик: это также работает в песочнице предпросмотра,
+  // где браузер может запретить переход по якорю или запись в историю.
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const target = link.getAttribute("href").slice(1);
+      if (!VIEW_META[target]) return;
+      event.preventDefault();
+      try {
+        if (location.hash !== "#" + target)
+          history.pushState(null, "", "#" + target);
+      } catch (error) {
+        /* В изолированном iframe переключаем раздел без истории. */
       }
-    });
-
-    document.getElementById("send-summary-now-btn")?.addEventListener("click", sendTelegramSessionSummary);
-    document.getElementById("clear-tg-log-btn")?.addEventListener("click", () => {
-      tgSettings.log = [];
-      saveTgSettings();
-      renderTelegramLog();
-    });
-
-    document.getElementById("reset-all-progress-btn")?.addEventListener("click", () => {
-      if (confirm("Точно сбросить всю статистику и серии?")) {
-        state.totalAnswered = 0;
-        state.totalCorrect = 0;
-        state.totalErrors = 0;
-        state.currentStreak = 0;
-        state.bestStreak = 0;
-        state.statsByExercise = {};
-        saveState();
-        updateGlobalStatsUI();
-        alert("Статистика сброшена.");
-      }
-    });
-
-    window.addEventListener("hashchange", () => {
-      showView();
+      showView(target);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
-
+  });
+  const restoreView = () => {
     showView();
-  }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  window.addEventListener("hashchange", restoreView);
+  window.addEventListener("popstate", restoreView);
+  byId("reset-progress").addEventListener("click", () => {
+    if (
+      window.confirm("Сбросить сохранённые серии и ошибки во всех упражнениях?")
+    ) {
+      progress = emptyProgress();
+      saveProgress();
+    }
+  });
+  ["notes-octave", "notes-root", "notes-scale"].forEach((id) =>
+    byId(id).addEventListener("change", renderNotes),
+  );
+  document.querySelectorAll("[data-notes-mode]").forEach((button) =>
+    button.addEventListener("click", () => {
+      notesMode = button.dataset.notesMode;
+      setSwitch("[data-notes-mode]", "data-notes-mode", notesMode);
+      renderNotes();
+    }),
+  );
+  byId("notes-next").addEventListener("click", newNotesQuiz);
+  ["interval-root", "interval-type"].forEach((id) =>
+    byId(id).addEventListener("change", renderInterval),
+  );
+  byId("interval-play").addEventListener("click", () => {
+    const first = rootMidi(byId("interval-root").value),
+      interval = getInterval(byId("interval-type").value);
+    playInterval(
+      first,
+      first + interval.semitones,
+      byId("interval-play-mode").value,
+    );
+  });
+  document
+    .querySelectorAll("[data-interval-task]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        setIntervalTask(button.dataset.intervalTask),
+      ),
+    );
+  byId("interval-build-next").addEventListener("click", newIntervalBuild);
+  byId("ear-next").addEventListener("click", newIntervalEar);
+  byId("ear-play").addEventListener("click", () =>
+    playInterval(
+      intervalEarQuiz.midi,
+      intervalEarQuiz.midi + intervalEarQuiz.interval.semitones,
+      byId("ear-play-mode").value,
+    ),
+  );
+  ["triad-root", "triad-type", "triad-inversion"].forEach((id) =>
+    byId(id).addEventListener("change", () => renderTriad(true)),
+  );
+  byId("triad-shape").addEventListener("change", () => renderTriad(false));
+  byId("triad-play").addEventListener("click", () =>
+    playChord(currentTriad.voicedNotes),
+  );
+  byId("triad-check").addEventListener("click", checkTriadQuiz);
+  byId("triad-next").addEventListener("click", newTriadQuiz);
+  ["seventh-root", "seventh-type"].forEach((id) =>
+    byId(id).addEventListener("change", () => renderSeventh(true)),
+  );
+  byId("seventh-shape").addEventListener("change", () => renderSeventh(false));
+  byId("seventh-play").addEventListener("click", () =>
+    playChord(currentSeventh.voicedNotes),
+  );
+  byId("seventh-quiz-play").addEventListener("click", () =>
+    playChord(seventhQuiz.voicedNotes),
+  );
+  byId("seventh-next").addEventListener("click", newSeventhQuiz);
+  ["scale-root", "scale-type"].forEach((id) =>
+    byId(id).addEventListener("change", () => {
+      renderScale();
+      newScaleQuiz();
+    }),
+  );
+  document.querySelectorAll("[data-scale-mode]").forEach((button) =>
+    button.addEventListener("click", () => {
+      scaleMode = button.dataset.scaleMode;
+      setSwitch("[data-scale-mode]", "data-scale-mode", scaleMode);
+      renderScale();
+    }),
+  );
+  byId("scale-play").addEventListener("click", playScale);
+  byId("scale-check").addEventListener("click", checkScaleQuiz);
+  byId("scale-reset").addEventListener("click", newScaleQuiz);
+  byId("scale-random").addEventListener("click", () => {
+    byId("scale-root").value = randomItem(ROOTS);
+    byId("scale-type").value = randomItem(SCALES).id;
+    renderScale();
+    newScaleQuiz();
+  });
+  document.querySelectorAll("[data-key-mode]").forEach((button) =>
+    button.addEventListener("click", () => {
+      keyDisplayMode = button.dataset.keyMode;
+      setSwitch("[data-key-mode]", "data-key-mode", keyDisplayMode);
+      renderKey();
+    }),
+  );
+  document
+    .querySelectorAll("[data-key-task]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        setKeyTask(button.dataset.keyTask),
+      ),
+    );
+  byId("key-next").addEventListener("click", newKeyQuiz);
+  byId("harmony-root").addEventListener("change", () => {
+    harmonyIndex = 0;
+    renderHarmony();
+    newHarmonyQuiz();
+  });
+  byId("harmony-progression").addEventListener("change", () => {
+    harmonyIndex = 0;
+    renderHarmony();
+  });
+  byId("harmony-play").addEventListener("click", () =>
+    playProgression(harmonyChords),
+  );
+  byId("harmony-check").addEventListener("click", checkHarmonyQuiz);
+  byId("harmony-reset").addEventListener("click", newHarmonyQuiz);
+  ["composition-root", "composition-progression", "composition-scale"].forEach(
+    (id) => byId(id).addEventListener("change", renderComposition),
+  );
+  byId("composition-regenerate").addEventListener("click", () => {
+    compositionSeed++;
+    renderComposition();
+  });
+  byId("composition-play").addEventListener("click", playComposition);
+}
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialize);
-  } else {
-    initialize();
-  }
-})();
+// Инициализируем все разделы один раз, чтобы переходы не сбрасывали задания.
+function initialise() {
+  initialiseSelects();
+  fillReference();
+  bindEvents();
+  renderNotes();
+  newNotesQuiz();
+  renderInterval();
+  newIntervalBuild();
+  newIntervalEar();
+  setIntervalTask("build");
+  renderTriad(true);
+  newTriadQuiz();
+  renderSeventh(true);
+  newSeventhQuiz();
+  renderScale();
+  newScaleQuiz();
+  renderKey();
+  newKeyQuiz();
+  renderHarmony();
+  newHarmonyQuiz();
+  renderComposition();
+  if (!window.Tone) byId("audio-status").textContent = "Звук браузера";
+  showStats();
+  showView();
+}
+initialise();
